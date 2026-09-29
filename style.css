@@ -1468,3 +1468,28 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     font-size:12px !important;
     line-height:1.1 !important;
 }
+/* ===== TAUX DE WIN : centrer les textes de gauche ===== */
+
+.visual-win .imp-row > div:first-child,
+.visual-win .crew-row > div:first-child{
+    position:absolute !important;
+
+    /* zone disponible entre le personnage et la séparation verticale */
+    left:8% !important;
+    right:34% !important;
+
+    top:50% !important;
+    transform:translateY(-50%) !important;
+
+    text-align:center !important;
+}
+
+.visual-win .win-label,
+.visual-win .method-inline{
+    width:100% !important;
+    text-align:center !important;
+}
+
+.visual-win .method-inline{
+    position:static !important;
+}
