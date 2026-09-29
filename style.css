@@ -1422,7 +1422,7 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     text-align:center !important;
 
     position:relative !important;
-    left:0 !important;
+    left:-6px !important;
 
     width:100% !important;
     height:100% !important;
