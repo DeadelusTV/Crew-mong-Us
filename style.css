@@ -1427,3 +1427,11 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     width:100% !important;
     height:100% !important;
 }
+
+/* ===== TAUX DE WIN : bloc gauche ===== */
+.visual-win .vrow > div,
+.win-rows .vrow > div{
+    position:relative !important;
+    left:22px !important;
+    top:10px !important;
+}
