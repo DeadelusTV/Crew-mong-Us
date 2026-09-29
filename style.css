@@ -1374,5 +1374,23 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   .visual-shame small{
     display:none !important;
   }
+
+  /* Wall of Shame - placement texte gauche */
+
+.visual-shame .vrow > div{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:14px !important;
+
+  padding-left:2% !important;
+  padding-right:6% !important;
+}
+
+.visual-shame small{
+  justify-self:end !important;
+  text-align:right !important;
+  max-width:190px !important;
+}
 }
 
