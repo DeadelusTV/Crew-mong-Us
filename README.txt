@@ -178,3 +178,11 @@ V6.22 — Mentions honorables :
 - seules les icônes et la décoration sont figées ;
 - titre, intitulés, petites stats et pseudos/résultats restent dynamiques ;
 - lignes recalées individuellement sur les 5 cases.
+
+
+V6.23 — Wall of Shame :
+- nouveau visuel propre avec les 7 icônes intégrées ;
+- aucun texte de statistique n'est figé dans l'image ;
+- texte, petites stats et pseudos restent dynamiques ;
+- calage ligne par ligne ;
+- commentaires ajoutés dans style.css pour retrouver facilement chaque statistique sur GitHub.

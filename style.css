@@ -351,7 +351,7 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 }
 .shame-rows .vrow:nth-child(1){top:26.25% !important}
 .shame-rows .vrow:nth-child(2){top:35.85% !important}
-.shame-rows .vrow:nth-child(3){top:44.9% !important}
+.shame-rows .vrow:nth-child(3){top:45.45% !important}
 .shame-rows .vrow:nth-child(4){top:55.05% !important}
 .shame-rows .vrow:nth-child(5){top:64.65% !important}
 .shame-rows .vrow:nth-child(6){top:74.25% !important}
@@ -1231,5 +1231,148 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     white-space:normal !important;
   }
   .mention-value{font-size:8.2px !important}
+}
+
+
+
+/* ==========================================================
+   V6.23 — WALL OF SHAME
+   Nouveau fond propre, icônes intégrées à l'image.
+   Tout le texte reste dynamique en HTML.
+   Les 7 lignes sont volontairement réglables une par une.
+   ========================================================== */
+
+.visual-shame{
+  aspect-ratio:4/3 !important;
+}
+.visual-shame>img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:fill !important;
+}
+
+.shame-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
+}
+
+.shame-rows .vrow{
+  position:absolute !important;
+  left:15.25% !important;
+  right:6.70% !important;
+  height:7.95% !important;
+
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 34.5% !important;
+  align-items:center !important;
+  column-gap:2.2% !important;
+
+  padding:0 !important;
+  color:#ff8b98 !important;
+  text-shadow:0 2px 5px #000 !important;
+  transform:none !important;
+}
+
+/* 1 — Impo en période d’essai */
+.shame-rows .vrow:nth-child(1){top:17.10% !important}
+
+/* 2 — Abonné au SAS */
+.shame-rows .vrow:nth-child(2){top:27.15% !important}
+
+/* 3 — Imposteur le plus souvent éjecté */
+.shame-rows .vrow:nth-child(3){top:37.40% !important}
+
+/* 4 — Fantôme ultime */
+.shame-rows .vrow:nth-child(4){top:47.65% !important}
+
+/* 5 — Le départ express */
+.shame-rows .vrow:nth-child(5){top:57.90% !important}
+
+/* 6 — Suspect même innocent */
+.shame-rows .vrow:nth-child(6){top:68.05% !important}
+
+/* 7 — Soirée Crew sans victoire */
+.shame-rows .vrow:nth-child(7){top:78.40% !important}
+
+/* Les icônes sont désormais dans l'image, pas en HTML. */
+.visual-shame .vrow .ico{
+  display:none !important;
+}
+
+/* Partie gauche : intitulé + petite statistique côte à côte. */
+.visual-shame .vrow > div{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:14px !important;
+  min-width:0 !important;
+  height:100% !important;
+  padding-left:1.5% !important;
+  padding-right:1.5% !important;
+  transform:none !important;
+}
+
+.visual-shame .vlabel{
+  color:#fff !important;
+  font-size:clamp(12px,.92vw,17px) !important;
+  line-height:1.04 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+
+.visual-shame small{
+  display:block !important;
+  color:#e2cdd2 !important;
+  font-size:clamp(8px,.57vw,10.5px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+
+/* Partie droite : pseudo / résultat. */
+.visual-shame .vrow > strong{
+  color:#fff !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  font-size:clamp(12px,.92vw,17px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  min-width:0 !important;
+  height:100% !important;
+  padding:0 2% !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+
+@media(max-width:900px){
+  .visual-shame .vrow > div{
+    grid-template-columns:1fr !important;
+    row-gap:2px !important;
+  }
+  .visual-shame small{
+    text-align:left !important;
+  }
+}
+
+@media(max-width:700px){
+  .shame-rows .vrow{
+    left:15.25% !important;
+    right:6.70% !important;
+    grid-template-columns:minmax(0,1fr) 34.5% !important;
+  }
+  .visual-shame .vlabel,
+  .visual-shame .vrow > strong{
+    font-size:8.4px !important;
+  }
+  .visual-shame small{
+    display:none !important;
+  }
 }
 
