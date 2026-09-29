@@ -1399,3 +1399,8 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     position:relative !important;
     right:25px !important;
 }
+
+.visual-shame .vrow small{
+    position:relative !important;
+    top:3px !important;
+}
