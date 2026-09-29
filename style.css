@@ -1408,3 +1408,8 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     position:relative !important;
     left:-14px !important;
 }
+/* Hall of Fame - décaler le contenu gauche */
+.visual-hall .vrow > div{
+    position:relative !important;
+    left:-12px !important;
+}
