@@ -137,11 +137,11 @@ function renderStats(){
  document.getElementById("shame").innerHTML=[
  vrow("Impo en période d’essai",zero.length?zero.map(x=>x.name).join(", "):"Personne",zero.length?zero.map(x=>`0/${x.imp.length}`).join(" • "):"Tous ont au moins une victoire","cone"),
  vrow("Abonné au SAS",sas.length?sas.map(x=>x.name).join(", "):"Personne",sas.length?"Éjecté dans 100 % de ses games Imposteur":"","eject"),
- vrow("Imposteur le plus souvent éjecté",mostE.map(x=>x.name).join(", "),`${mostE[0].impEjected}/${mostE[0].imp.length} • ${pct(maxER,1)}`,"x"),
+ vrow("VIP du SAS",mostE.map(x=>x.name).join(", "),`${mostE[0].impEjected}/${mostE[0].imp.length} • ${pct(maxER,1)}`,"x"),
  vrow("Fantôme ultime",ghost.map(x=>x.name).join(", "),`Mort en T1 ${maxT1} fois`,"ghost"),
- vrow("Le départ express",express.map(x=>x.name).join(", "),`${pct(maxFR,1)} • ${express[0].firstDeath}/${express[0].crew.length} games Crew`,"fast"),
- vrow("Suspect même innocent",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
- vrow("Soirée Crew sans victoire",noCW.length?noCW.map(x=>x.name).join(", "):"Personne",noCW.length?"0 victoire Crew":"Tous ont au moins une victoire Crew","sad")
+ vrow("Le départ express",express.map(x=>x.name).join(", "),`Mort en premier ${express[0].firstDeath} fois • ${pct(maxFR,1)}`,"fast"),
+ vrow("Accusé idéal",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
+ vrow("Soirée noire",noCW.length?noCW.map(x=>x.name).join(", "):"Personne",noCW.length?"0 victoire Crew":"Tous ont au moins une victoire Crew","sad")
  ].join("");
 
  const avgT1=games.length?games.reduce((a,g)=>a+(g.t1Deaths||0),0)/games.length:0,maxDeaths=Math.max(0,...games.map(g=>g.t1Deaths||0)),maxTimes=games.filter(g=>(g.t1Deaths||0)===maxDeaths).length;
