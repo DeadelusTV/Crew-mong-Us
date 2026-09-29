@@ -1394,3 +1394,8 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 }
 }
 
+/* Wall of Shame - déplacer les petites stats vers la gauche */
+.visual-shame .vrow small{
+    position:relative !important;
+    right:25px !important;
+}
