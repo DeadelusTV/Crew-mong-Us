@@ -1,0 +1,1378 @@
+:root{
+  --bg:#020914;--panel:#071827;--panel2:#0a2134;--line:#17415f;--text:#eff9ff;--muted:#93aabd;
+  --cyan:#22dcff;--blue:#2f9df5;--red:#ff354a;--gold:#ffc231;--green:#58e58b;--purple:#a965ff;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(#020712,#06111d 42%,#03101a);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;min-height:100vh}
+.page-stars{position:fixed;inset:0;pointer-events:none;opacity:.42;background-image:radial-gradient(circle at 8% 10%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 73% 8%,#47cfff 0 1px,transparent 1.7px),radial-gradient(circle at 92% 14%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 30% 30%,#2b7fff 0 1px,transparent 1.5px);background-size:180px 180px,260px 260px,310px 310px,220px 220px}
+button,select,input{font:inherit}.visual-hero{position:relative;z-index:1;max-width:1900px;margin:0 auto;line-height:0;overflow:hidden;border-bottom:1px solid #163d58}.visual-hero img{width:100%;height:auto;display:block}
+.top-nav{position:sticky;top:0;z-index:20;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:11px 16px;background:rgba(3,14,25,.93);backdrop-filter:blur(14px);border-bottom:1px solid #16445f;box-shadow:0 10px 28px rgba(0,0,0,.25)}
+.nav,.tab,.secondary,.primary{border:1px solid #1e536f;border-radius:10px;padding:10px 15px;background:#081d2e;color:var(--text);cursor:pointer;transition:.15s ease}.nav span{margin-right:5px;color:#8ceaff}.nav:hover,.tab:hover,.secondary:hover{border-color:#3fcff1;transform:translateY(-1px)}.nav.active,.tab.active,.primary{border-color:var(--cyan);background:#0a3046;box-shadow:0 0 17px rgba(34,220,255,.18)}
+.shell{position:relative;z-index:1;width:min(1500px,calc(100% - 28px));margin:22px auto 54px}.view{display:none}.view.active{display:block}.glass-panel{background:linear-gradient(180deg,rgba(8,28,45,.94),rgba(5,18,31,.96));border:1px solid #174866;border-radius:18px;box-shadow:inset 0 0 28px rgba(30,120,180,.05),0 18px 40px rgba(0,0,0,.16)}.content-panel{padding:20px}.gap-top{margin-top:16px}
+.period-toolbar{display:flex;justify-content:space-between;align-items:center;gap:22px;padding:17px 20px;margin-bottom:16px}.period-toolbar h1{margin:3px 0 5px;font-size:28px}.period-toolbar p{margin:0;color:var(--muted)}.period-toolbar label{min-width:230px}.eyebrow{font-size:12px;letter-spacing:.18em;color:#83e8ff;font-weight:800}
+label{display:grid;gap:6px;color:#bfd0dc;font-size:13px}select,input{width:100%;background:#061827;color:var(--text);border:1px solid #1e526f;border-radius:9px;padding:10px 11px;outline:none}select:focus,input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(34,220,255,.08)}
+.visual-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.visual-card{position:relative;overflow:hidden;border-radius:24px;box-shadow:0 24px 55px rgba(0,0,0,.30)}.visual-card>img{display:block;width:100%;height:auto;user-select:none;pointer-events:none}.visual-mentions{grid-column:1/-1}
+/* Taux de win — V6.8 : asset 4:3 identique aux autres cadres */
+.visual-win{aspect-ratio:4/3}
+.visual-win>img{width:100%;height:100%;object-fit:fill}
+.win-overlay{position:absolute;inset:0;text-shadow:0 2px 5px #000}
+
+/* Les gros libellés sont maintenant intégrés au fond.
+   L'overlay ne gère que les lignes variables + scores. */
+.imp-row,.crew-row{
+  position:absolute;
+  left:17.3%;
+  right:5.4%;
+  height:15.2%;
+  display:block;
+}
+.imp-row{top:31.9%}
+.crew-row{top:51.6%}
+
+.method-inline{
+  position:absolute;
+  left:0;
+  top:62%;
+  color:#b7d5e5;
+  font-size:clamp(9px,.66vw,13px);
+  line-height:1.15;
+  white-space:nowrap;
+}
+.method-inline b{color:#fff}
+
+.win-score{
+  position:absolute;
+  right:0;
+  top:42%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.win-score strong{font-size:clamp(22px,1.9vw,38px);line-height:1}
+.win-score b{font-size:clamp(12px,1vw,19px);padding:8px 11px;border-radius:10px;line-height:1}
+.imp-row .win-score b{background:#a81729}
+.crew-row .win-score b{background:#136cb6}
+
+/* Une seule barre, entièrement HTML/CSS. Aucune barre dans l'image. */
+.winbar{
+  position:absolute;
+  left:7.6%;
+  right:7.6%;
+  top:73.6%;
+  height:5.5%;
+  display:flex;
+  overflow:hidden;
+  border-radius:999px;
+  background:#0b2b41;
+  border:2px solid #63e8ff;
+  box-shadow:0 0 0 2px rgba(2,10,18,.9) inset,0 0 12px rgba(46,214,255,.28);
+}
+#impo-bar,#crew-bar{height:100%;flex:0 0 auto;min-width:0}
+#impo-bar{background:linear-gradient(90deg,#ff3149,#ff5064)}
+#crew-bar{background:linear-gradient(90deg,#1ea5f1,#45c1ff)}
+
+/* Dynamic rows — each overlay now maps 1:1 to a real row in its image asset */
+.visual-rows{position:absolute;display:grid;z-index:2}
+.hall-rows{left:2.8%;right:2.9%;top:25.9%;bottom:17.2%;grid-template-rows:repeat(6,1fr);gap:1.05%}
+.shame-rows{left:4.1%;right:4.0%;top:28.0%;bottom:13.4%;grid-template-rows:repeat(7,1fr);gap:.95%}
+.mention-rows{left:15.2%;right:18.6%;top:25.0%;bottom:22.9%;grid-template-rows:repeat(5,1fr);gap:1.0%}
+.vrow{display:grid;grid-template-columns:38px minmax(0,1fr) minmax(175px,.78fr);align-items:center;gap:9px;padding:0 13px 0 9px;text-shadow:0 2px 5px #000;min-height:0}
+.vrow .ico{width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.08);color:currentColor}
+.vrow svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.vrow>div{display:flex;flex-direction:column;justify-content:center;min-width:0;height:100%}
+.vrow .vlabel{font-weight:900;font-size:clamp(10px,.78vw,15px);line-height:1.05}
+.vrow small{display:block;color:#b6ccda;font-size:clamp(8px,.58vw,11px);margin-top:3px;line-height:1.05}
+.vrow strong{display:flex;align-items:center;justify-content:flex-end;text-align:right;font-size:clamp(10px,.78vw,15px);line-height:1.08;min-width:0;max-height:100%;overflow-wrap:anywhere}
+.visual-hall .vrow{color:#ffd867}.visual-shame .vrow{color:#ff818f}.visual-mentions .vrow{color:#87f5ac}
+.visual-hall .vlabel,.visual-hall strong,.visual-shame .vlabel,.visual-shame strong,.visual-mentions .vlabel,.visual-mentions strong{color:#fff}
+
+/* T1 special layout */
+.t1-feature{position:absolute;left:8%;right:8%;top:36.0%;height:18.8%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;text-shadow:0 2px 8px #000}.t1-feature span{font-size:clamp(10px,.84vw,16px);color:#cfddff;margin-bottom:8px}.t1-feature strong{font-size:clamp(28px,3vw,54px);color:#f2eaff;margin:0 0 6px}.t1-feature small{font-size:clamp(9px,.72vw,13px);color:#b8c8df}.t1-mini-grid{position:absolute;left:4.5%;right:4.5%;top:60.2%;bottom:7.2%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2.1%}.t1mini{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:8px;padding:2px 10px 2px 9%;text-shadow:0 2px 6px #000}.t1mini .ico{width:30px;height:30px;display:grid;place-items:center;color:#d9ccff}.t1mini svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}.t1mini b{display:block;font-size:clamp(11px,.82vw,15px)}.t1mini small{display:block;color:#c1c8dd;font-size:clamp(8px,.64vw,11px);margin-top:1px}
+/* content tabs */
+.section-head,.player-top,.player-period-bar{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}.section-head p,.player-period-bar span,.player-top p{color:var(--muted);margin:5px 0 0}.section-title{display:flex;align-items:center;gap:10px}.section-title h2{margin:0}.section-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#0a2a3e;color:#8fefff;border:1px solid #1e5b78}.pill{padding:8px 12px;border:1px solid #296788;border-radius:999px;background:#09283b;color:#a1ecff}.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0}.card{padding:14px;border:1px solid #17455f;border-radius:13px;background:#0a2032}.card span{display:block;color:var(--muted);font-size:12px}.card strong{display:block;font-size:22px;margin-top:3px}.session-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}.session-card{padding:16px;border:1px solid #17455f;border-radius:14px;background:#091d2f;color:var(--text);cursor:pointer;text-align:left}.session-card.active{border-color:var(--cyan);box-shadow:0 0 16px rgba(34,220,255,.12)}.session-card h3{margin:0 0 5px}.session-card p{margin:0;color:var(--muted)}
+.player-layout{display:grid;grid-template-columns:250px 1fr;gap:16px}.sidebar{align-self:start;position:sticky;top:76px}.player-btn{width:100%;text-align:left;padding:11px 12px;border:1px solid transparent;background:transparent;color:var(--text);border-radius:10px;cursor:pointer;margin:2px 0}.player-btn span{display:block;color:var(--muted);font-size:12px;margin-top:2px}.player-btn.active{background:#0b2a40;border-color:#1c668f}.player-top h2{font-size:34px;margin:3px 0 2px}.player-period-bar{align-items:end;margin:17px 0 5px}.player-period-bar label{min-width:220px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}.two-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}.subpanel{background:#071521;border:1px solid #12384f;border-radius:14px;padding:16px}.subpanel h3{margin:0 0 12px}.subpanel p{color:var(--muted);font-size:12px;margin:4px 0 0}.subpanel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.kv{display:grid;grid-template-columns:1fr 1fr;gap:9px}.kv-item{padding:10px;background:#0a1c2b;border-radius:9px}.kv-item span{display:block;color:var(--muted);font-size:12px}.kv-item strong{font-size:17px}.map-list{display:grid;gap:8px}.map-row{display:flex;justify-content:space-between;padding:9px 10px;background:#0a1c2b;border-radius:9px}.favorite-box{margin-top:12px;padding:12px;background:#0a1c2b;border-radius:10px}.favorite-box span{display:block;color:var(--muted);font-size:12px}.favorite-box strong{display:block;margin-top:3px}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}.wide-table{min-width:1280px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(149,191,216,.14);white-space:nowrap;vertical-align:top}th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9eb6c7}
+.form-grid{display:grid;gap:13px;margin:15px 0}.cols4{grid-template-columns:repeat(4,1fr)}.no-bottom{margin-bottom:0}.entry-cols{align-items:start}.dynamic-list{display:grid;gap:10px;margin-top:12px}.dynamic-row{display:grid;grid-template-columns:105px 175px minmax(0,1fr) auto;gap:8px;align-items:end;padding:10px;background:#091d2c;border-radius:10px}.dynamic-row.sabotage-row{grid-template-columns:110px minmax(0,1fr) auto}.remove,.danger{border:1px solid #84303b;border-radius:8px;background:#331117;color:#fff;padding:10px 12px;cursor:pointer}.favorite-label{margin-top:12px}.task-input{display:flex;align-items:center;gap:8px}.task-input span{font-weight:800}.save-row{display:flex;align-items:center;gap:12px;margin-top:16px}.save-row span{color:#76e59d}.admin-list{display:grid;gap:10px;margin-top:16px}.admin-item{display:grid;grid-template-columns:1fr auto;gap:14px;padding:13px;border:1px solid #173f59;border-radius:11px;background:#071521}.admin-item small{display:block;color:var(--muted);margin-top:4px}
+footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12px;padding:0 14px 28px}
+@media(max-width:1100px){.visual-grid{grid-template-columns:1fr}.visual-mentions{grid-column:auto}.two-cols,.player-layout{grid-template-columns:1fr}.sidebar{position:static}.summary{grid-template-columns:repeat(3,1fr)}.cols4{grid-template-columns:repeat(2,1fr)}.session-cards{grid-template-columns:1fr}.vrow{grid-template-columns:38px minmax(0,1fr) minmax(110px,.6fr)}.sidebar{top:auto}}
+@media(max-width:700px){.shell{width:min(100% - 14px,1500px)}.top-nav{gap:6px}.nav{flex:1 1 28%;padding:9px 7px}.period-toolbar,.section-head,.player-top,.player-period-bar{align-items:flex-start;flex-direction:column}.period-toolbar label,.player-period-bar label{width:100%;min-width:0}.cols4,.kv{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.visual-card{border-radius:15px}.imp-row,.crew-row{left:17.3%;right:5.4%}.method-inline{font-size:7.5px;line-height:1.15;max-width:none}.win-score{gap:5px}.win-score b{padding:5px 6px}.winbar{left:7.6%;right:7.6%;top:73.6%;height:5.5%}.vrow{grid-template-columns:24px 1fr 100px;gap:5px;padding:0 5px}.vrow .ico{width:22px;height:22px}.vrow svg{width:14px;height:14px}.vrow .vlabel{font-size:8.5px}.vrow small{display:none}.vrow strong{font-size:8.5px}.t1mini{grid-template-columns:25px 1fr;padding-left:5px}.t1mini .ico{width:23px}.dynamic-row,.dynamic-row.sabotage-row{grid-template-columns:1fr}.remove{justify-self:start}}
+
+
+.visual-shame .vrow{padding-top:2px;padding-bottom:2px}
+.visual-shame .vlabel{font-size:clamp(10px,.76vw,14px)}
+.visual-shame small{font-size:clamp(8px,.56vw,10.5px);margin-top:2px}
+
+
+
+/* V6.4 fine tuning */
+.visual-hall .vrow{padding-top:2px;padding-bottom:2px}
+.visual-hall .vrow>div{transform:translateY(-3px)}
+.visual-hall .vrow strong{transform:translateY(-2px)}
+.visual-hall .vlabel{font-size:clamp(10px,.76vw,14px)}
+.visual-hall small{font-size:clamp(8px,.56vw,10px);margin-top:2px}
+
+.visual-shame .vrow{padding-top:2px;padding-bottom:2px}
+.visual-shame .vrow>div{transform:translateY(2px)}
+.visual-shame .vrow strong{transform:translateY(2px)}
+.visual-shame .vlabel{font-size:clamp(10px,.76vw,14px)}
+.visual-shame small{font-size:clamp(8px,.56vw,10px);margin-top:2px}
+
+.visual-mentions .vrow .ico{transform:translateY(4px)}
+.visual-mentions .vrow>div{transform:translateY(1px)}
+.visual-mentions .vrow strong{transform:translateY(1px)}
+.visual-mentions .vlabel{font-size:clamp(10px,.76vw,14px)}
+.visual-mentions small{font-size:clamp(8px,.56vw,10px);margin-top:2px}
+
+.t1mini>div{transform:translateY(-2px)}
+
+
+
+/* V6.10 — Hall of Fame rebuilt from a clean asset */
+.hall-rows{
+  left:3.05% !important;
+  right:2.95% !important;
+  top:22.9% !important;
+  bottom:18.3% !important;
+  grid-template-rows:repeat(6,1fr) !important;
+  gap:1.15% !important;
+}
+
+.visual-hall .vrow{
+  grid-template-columns:44px minmax(0,1fr) minmax(250px,.92fr) !important;
+  align-items:center !important;
+  gap:12px !important;
+  padding:0 16px 0 12px !important;
+  color:#ffd867;
+}
+.visual-hall .vrow .ico{
+  width:30px !important;
+  height:30px !important;
+  background:rgba(255,216,103,.08) !important;
+  transform:none !important;
+}
+.visual-hall .vrow svg{
+  width:18px !important;
+  height:18px !important;
+}
+.visual-hall .vrow > div{
+  transform:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  height:100% !important;
+}
+.visual-hall .vrow strong{
+  transform:none !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  text-align:right !important;
+  font-size:clamp(13px,.98vw,19px) !important;
+  line-height:1.08 !important;
+  min-width:0 !important;
+  overflow-wrap:anywhere !important;
+}
+.visual-hall .vlabel{
+  color:#fff !important;
+  font-size:clamp(13px,.98vw,19px) !important;
+  line-height:1.08 !important;
+  font-weight:900 !important;
+}
+.visual-hall small{
+  display:block !important;
+  color:#d2dbe6 !important;
+  font-size:clamp(9px,.66vw,12px) !important;
+  line-height:1.08 !important;
+  margin-top:4px !important;
+}
+.visual-hall strong{ color:#fff !important; }
+
+@media(max-width:700px){
+  .hall-rows{
+    left:3.05% !important;
+    right:2.95% !important;
+    top:22.9% !important;
+    bottom:18.3% !important;
+    gap:1.15% !important;
+  }
+  .visual-hall .vrow{
+    grid-template-columns:24px 1fr 110px !important;
+    gap:6px !important;
+    padding:0 7px 0 5px !important;
+  }
+  .visual-hall .vrow .ico{
+    width:22px !important;
+    height:22px !important;
+  }
+  .visual-hall .vrow svg{
+    width:14px !important;
+    height:14px !important;
+  }
+  .visual-hall .vlabel{
+    font-size:8.8px !important;
+  }
+  .visual-hall small{
+    display:none !important;
+  }
+  .visual-hall .vrow strong{
+    font-size:8.8px !important;
+  }
+}
+
+
+
+/* V6.11 — Hall of Fame : positionnement absolu ligne par ligne */
+.hall-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:2 !important;
+}
+
+.hall-rows .vrow{
+  position:absolute !important;
+  left:3.1% !important;
+  right:3.1% !important;
+  height:8.75% !important;
+  display:grid !important;
+  grid-template-columns:44px minmax(0,1fr) minmax(250px,.92fr) !important;
+  align-items:center !important;
+  gap:12px !important;
+  padding:0 16px 0 12px !important;
+  text-shadow:0 2px 5px #000 !important;
+  color:#ffd867 !important;
+}
+
+.hall-rows .vrow:nth-child(1){top:26.1% !important}
+.hall-rows .vrow:nth-child(2){top:35.95% !important}
+.hall-rows .vrow:nth-child(3){top:45.9% !important}
+.hall-rows .vrow:nth-child(4){top:55.45% !important}
+.hall-rows .vrow:nth-child(5){top:65.3% !important}
+.hall-rows .vrow:nth-child(6){top:75.2% !important}
+
+.visual-hall .vrow .ico{
+  width:30px !important;
+  height:30px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:50% !important;
+  background:rgba(255,216,103,.08) !important;
+  color:#ffd867 !important;
+  transform:none !important;
+}
+.visual-hall .vrow svg{
+  width:18px !important;
+  height:18px !important;
+}
+.visual-hall .vrow > div{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  height:100% !important;
+  transform:none !important;
+}
+.visual-hall .vlabel{
+  color:#fff !important;
+  font-size:clamp(12px,.90vw,17px) !important;
+  line-height:1.06 !important;
+  font-weight:900 !important;
+}
+.visual-hall small{
+  display:block !important;
+  color:#d2dbe6 !important;
+  font-size:clamp(8px,.58vw,11px) !important;
+  line-height:1.08 !important;
+  margin-top:4px !important;
+}
+.visual-hall .vrow strong{
+  color:#fff !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  text-align:right !important;
+  font-size:clamp(12px,.90vw,17px) !important;
+  line-height:1.06 !important;
+  min-width:0 !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+
+@media(max-width:700px){
+  .hall-rows .vrow{
+    left:3.1% !important;
+    right:3.1% !important;
+    height:8.75% !important;
+    grid-template-columns:24px 1fr 110px !important;
+    gap:6px !important;
+    padding:0 7px 0 5px !important;
+  }
+  .visual-hall .vrow .ico{
+    width:22px !important;
+    height:22px !important;
+  }
+  .visual-hall .vrow svg{
+    width:14px !important;
+    height:14px !important;
+  }
+  .visual-hall .vlabel,
+  .visual-hall .vrow strong{
+    font-size:8.7px !important;
+    line-height:1.03 !important;
+  }
+  .visual-hall small{
+    display:none !important;
+  }
+}
+
+
+
+/* V6.12 — Wall of Shame rebuilt from a clean asset */
+.shame-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:2 !important;
+}
+
+.shame-rows .vrow{
+  position:absolute !important;
+  left:4.15% !important;
+  right:4.15% !important;
+  height:7.75% !important;
+  display:grid !important;
+  grid-template-columns:42px minmax(0,1fr) minmax(230px,.80fr) !important;
+  align-items:center !important;
+  gap:12px !important;
+  padding:0 16px 0 12px !important;
+  text-shadow:0 2px 5px #000 !important;
+  color:#ff818f !important;
+}
+.shame-rows .vrow:nth-child(1){top:26.25% !important}
+.shame-rows .vrow:nth-child(2){top:35.85% !important}
+.shame-rows .vrow:nth-child(3){top:45.45% !important}
+.shame-rows .vrow:nth-child(4){top:55.05% !important}
+.shame-rows .vrow:nth-child(5){top:64.65% !important}
+.shame-rows .vrow:nth-child(6){top:74.25% !important}
+.shame-rows .vrow:nth-child(7){top:83.85% !important}
+
+.visual-shame .vrow .ico{
+  width:30px !important;
+  height:30px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:50% !important;
+  background:rgba(255,120,140,.09) !important;
+  color:#ff8795 !important;
+  transform:none !important;
+}
+.visual-shame .vrow svg{
+  width:18px !important;
+  height:18px !important;
+}
+.visual-shame .vrow > div{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  height:100% !important;
+  transform:none !important;
+}
+.visual-shame .vlabel{
+  color:#fff !important;
+  font-size:clamp(12px,.90vw,17px) !important;
+  line-height:1.06 !important;
+  font-weight:900 !important;
+}
+.visual-shame small{
+  display:block !important;
+  color:#d9c9cf !important;
+  font-size:clamp(8px,.58vw,11px) !important;
+  line-height:1.08 !important;
+  margin-top:4px !important;
+}
+.visual-shame .vrow strong{
+  color:#fff !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  text-align:right !important;
+  font-size:clamp(12px,.90vw,17px) !important;
+  line-height:1.06 !important;
+  min-width:0 !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+
+@media(max-width:700px){
+  .shame-rows .vrow{
+    left:4.15% !important;
+    right:4.15% !important;
+    height:7.75% !important;
+    grid-template-columns:24px 1fr 110px !important;
+    gap:6px !important;
+    padding:0 7px 0 5px !important;
+  }
+  .visual-shame .vrow .ico{
+    width:22px !important;
+    height:22px !important;
+  }
+  .visual-shame .vrow svg{
+    width:14px !important;
+    height:14px !important;
+  }
+  .visual-shame .vlabel,
+  .visual-shame .vrow strong{
+    font-size:8.7px !important;
+    line-height:1.03 !important;
+  }
+  .visual-shame small{
+    display:none !important;
+  }
+}
+
+
+
+/* V6.13 — Wall of Shame : calage ligne par ligne */
+.shame-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
+}
+
+.shame-rows .vrow{
+  position:absolute !important;
+  left:4.25% !important;
+  right:4.25% !important;
+  display:grid !important;
+  grid-template-columns:40px minmax(0,1fr) minmax(225px,.78fr) !important;
+  align-items:center !important;
+  gap:11px !important;
+  padding:0 15px 0 12px !important;
+  text-shadow:0 2px 5px #000 !important;
+  color:#ff818f !important;
+  transform:none !important;
+  min-height:0 !important;
+}
+
+.shame-rows .vrow:nth-child(1){top:25.65% !important;height:7.20% !important}
+.shame-rows .vrow:nth-child(2){top:35.15% !important;height:7.20% !important}
+.shame-rows .vrow:nth-child(3){top:44.70% !important;height:7.20% !important}
+.shame-rows .vrow:nth-child(4){top:54.20% !important;height:7.20% !important}
+.shame-rows .vrow:nth-child(5){top:63.70% !important;height:7.20% !important}
+.shame-rows .vrow:nth-child(6){top:73.20% !important;height:7.20% !important}
+.shame-rows .vrow:nth-child(7){top:82.75% !important;height:7.20% !important}
+
+.visual-shame .vrow .ico{
+  width:30px !important;
+  height:30px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:50% !important;
+  background:rgba(255,120,140,.08) !important;
+  color:#ff8795 !important;
+  transform:none !important;
+}
+.visual-shame .vrow svg{
+  width:17px !important;
+  height:17px !important;
+}
+.visual-shame .vrow > div{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  height:100% !important;
+  transform:none !important;
+}
+.visual-shame .vlabel{
+  color:#fff !important;
+  font-size:clamp(11px,.84vw,16px) !important;
+  line-height:1.04 !important;
+  font-weight:900 !important;
+}
+.visual-shame small{
+  display:block !important;
+  color:#d9c9cf !important;
+  font-size:clamp(7px,.54vw,10px) !important;
+  line-height:1.05 !important;
+  margin-top:3px !important;
+}
+.visual-shame .vrow strong{
+  color:#fff !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  text-align:right !important;
+  font-size:clamp(11px,.84vw,16px) !important;
+  line-height:1.04 !important;
+  min-width:0 !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+
+@media(max-width:700px){
+  .shame-rows .vrow{
+    left:4.25% !important;
+    right:4.25% !important;
+    grid-template-columns:22px 1fr 102px !important;
+    gap:6px !important;
+    padding:0 6px 0 4px !important;
+  }
+  .visual-shame .vrow .ico{
+    width:20px !important;
+    height:20px !important;
+  }
+  .visual-shame .vrow svg{
+    width:12px !important;
+    height:12px !important;
+  }
+  .visual-shame .vlabel,
+  .visual-shame .vrow strong{
+    font-size:8.4px !important;
+    line-height:1.02 !important;
+  }
+  .visual-shame small{
+    display:none !important;
+  }
+}
+
+
+
+/* V6.14 — Wall of Shame : intitulé + petite stat côte à côte */
+.shame-rows .vrow{
+  grid-template-columns:40px minmax(0,1fr) minmax(215px,.72fr) !important;
+}
+
+.visual-shame .vrow > div{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:14px !important;
+  height:100% !important;
+  transform:none !important;
+}
+
+.visual-shame .vlabel{
+  font-size:clamp(13px,.95vw,18px) !important;
+  line-height:1.04 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.visual-shame small{
+  display:block !important;
+  font-size:clamp(8px,.56vw,10.5px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+  color:#d9c9cf !important;
+  text-align:right !important;
+}
+
+.visual-shame .vrow strong{
+  font-size:clamp(12px,.88vw,16px) !important;
+}
+
+@media(max-width:900px){
+  .visual-shame .vrow > div{
+    grid-template-columns:1fr !important;
+    row-gap:2px !important;
+  }
+  .visual-shame small{
+    text-align:left !important;
+  }
+}
+
+@media(max-width:700px){
+  .visual-shame small{
+    display:none !important;
+  }
+}
+
+
+
+/* V6.15 — Wall of Shame : décalage uniquement de la partie gauche */
+.visual-shame .vrow .ico{
+  transform:translateX(7px) !important;
+}
+
+.visual-shame .vrow > div{
+  transform:translateX(7px) !important;
+}
+
+/* On rapproche légèrement la petite stat du bord droit de la case gauche */
+.visual-shame .vrow small{
+  padding-right:2px !important;
+}
+
+/* La colonne résultat/pseudos reste strictement immobile */
+.visual-shame .vrow > strong{
+  transform:none !important;
+}
+
+
+
+/* V6.16 — Avant le premier conseil */
+.t1-feature span{
+  position:relative !important;
+  top:7px !important;
+  margin-bottom:8px !important;
+}
+.t1-feature strong{
+  /* volontairement inchangé : le gros "1,75 Crewmates" est validé */
+}
+.t1-feature > small{
+  position:relative !important;
+  top:-7px !important;
+}
+
+/* Les 4 petites cartes : intitulé discret, pseudo/valeur principale plus forte */
+.t1mini{
+  grid-template-columns:48px minmax(0,1fr) !important;
+  gap:10px !important;
+  padding:4px 12px 4px 8% !important;
+}
+.t1mini .ico{
+  width:34px !important;
+  height:34px !important;
+}
+.t1mini svg{
+  width:22px !important;
+  height:22px !important;
+}
+.t1mini .t1copy{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  transform:none !important;
+}
+.t1mini .t1label{
+  display:block !important;
+  font-size:clamp(10px,.72vw,13px) !important;
+  line-height:1.05 !important;
+  color:#cfd4e6 !important;
+  font-weight:700 !important;
+  margin:0 0 3px !important;
+}
+.t1mini .t1name{
+  display:block !important;
+  font-size:clamp(13px,.98vw,18px) !important;
+  line-height:1.05 !important;
+  color:#fff !important;
+  font-weight:900 !important;
+  margin:0 !important;
+  overflow-wrap:anywhere !important;
+}
+.t1mini .t1stat{
+  display:block !important;
+  font-size:clamp(9px,.64vw,11px) !important;
+  line-height:1.05 !important;
+  color:#c1c8dd !important;
+  margin-top:3px !important;
+}
+
+/* neutralise l'ancien petit décalage hérité */
+.t1mini>div{transform:none !important}
+
+@media(max-width:700px){
+  .t1mini{
+    grid-template-columns:26px 1fr !important;
+    gap:5px !important;
+    padding-left:5px !important;
+  }
+  .t1mini .ico{
+    width:24px !important;
+    height:24px !important;
+  }
+  .t1mini svg{
+    width:15px !important;
+    height:15px !important;
+  }
+  .t1mini .t1label{font-size:7.6px !important}
+  .t1mini .t1name{font-size:9.2px !important}
+  .t1mini .t1stat{font-size:7px !important;margin-top:1px !important}
+}
+
+
+
+/* V6.17 — Avant le premier conseil refait proprement, icônes intégrées */
+.t1-feature{
+  left:18% !important;
+  right:8.5% !important;
+  top:36.8% !important;
+  height:17.4% !important;
+}
+.t1-feature span{
+  position:relative !important;
+  top:8px !important;
+  margin-bottom:8px !important;
+}
+.t1-feature strong{
+  /* inchangé volontairement */
+}
+.t1-feature > small{
+  position:relative !important;
+  top:-5px !important;
+}
+
+.t1-mini-grid{
+  left:3.8% !important;
+  right:3.8% !important;
+  top:61.4% !important;
+  bottom:7.4% !important;
+  gap:2.5% !important;
+}
+.t1mini{
+  display:flex !important;
+  align-items:center !important;
+  padding:4px 12px 4px 24.5% !important; /* laisse la place aux icônes intégrées */
+  text-shadow:0 2px 6px #000 !important;
+}
+.t1mini .ico{display:none !important}
+.t1mini .t1copy{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  width:100% !important;
+}
+.t1mini .t1label{
+  display:block !important;
+  font-size:clamp(10px,.70vw,13px) !important;
+  line-height:1.04 !important;
+  color:#cfd4e6 !important;
+  font-weight:700 !important;
+  margin:0 0 3px !important;
+}
+.t1mini .t1name{
+  display:block !important;
+  font-size:clamp(15px,1.06vw,20px) !important;
+  line-height:1.03 !important;
+  color:#fff !important;
+  font-weight:900 !important;
+  margin:0 !important;
+  overflow-wrap:anywhere !important;
+}
+.t1mini .t1stat{
+  display:block !important;
+  font-size:clamp(9px,.64vw,11px) !important;
+  line-height:1.05 !important;
+  color:#c1c8dd !important;
+  margin-top:3px !important;
+}
+.t1mini>div{transform:none !important}
+
+@media(max-width:700px){
+  .t1-feature{
+    left:18% !important;
+    right:8.5% !important;
+    top:36.8% !important;
+    height:17.4% !important;
+  }
+  .t1-mini-grid{
+    left:3.8% !important;
+    right:3.8% !important;
+    top:61.4% !important;
+    bottom:7.4% !important;
+  }
+  .t1mini{
+    padding:2px 5px 2px 24.5% !important;
+  }
+  .t1mini .t1label{font-size:7.2px !important}
+  .t1mini .t1name{font-size:9.4px !important}
+  .t1mini .t1stat{font-size:6.8px !important;margin-top:1px !important}
+}
+
+
+
+/* V6.18 — mini-cartes T1 : remonter le contenu sans toucher au bloc central */
+.t1mini .t1copy{
+  transform:translateY(-8px) !important;
+}
+
+@media(max-width:700px){
+  .t1mini .t1copy{
+    transform:translateY(-4px) !important;
+  }
+}
+
+
+
+/* V6.19 — Mentions honorables : nouveau fond, icônes intégrées, calage ligne par ligne */
+.mention-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
+}
+
+.mention-row{
+  position:absolute !important;
+  left:20.1% !important;
+  right:14.3% !important;
+  height:10.55% !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(175px,.23fr) !important;
+  align-items:center !important;
+  gap:18px !important;
+  padding:0 12px !important;
+  text-shadow:0 2px 5px #000 !important;
+}
+
+.mention-row:nth-child(1){top:24.00% !important}
+.mention-row:nth-child(2){top:35.87% !important}
+.mention-row:nth-child(3){top:47.87% !important}
+.mention-row:nth-child(4){top:59.87% !important}
+.mention-row:nth-child(5){top:71.87% !important}
+
+.mention-copy{
+  display:flex !important;
+  align-items:center !important;
+  gap:16px !important;
+  min-width:0 !important;
+}
+
+.mention-label{
+  color:#fff !important;
+  font-size:clamp(13px,1vw,19px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+}
+
+.mention-detail{
+  color:#bfe8d1 !important;
+  font-size:clamp(9px,.68vw,12px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+
+.mention-value{
+  color:#fff !important;
+  font-size:clamp(13px,1vw,19px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  text-align:right !important;
+  overflow-wrap:anywhere !important;
+}
+
+/* Neutralise l'ancien système vrow uniquement pour Mentions */
+.visual-mentions .vrow{display:none !important}
+
+@media(max-width:900px){
+  .mention-row{
+    left:20.1% !important;
+    right:14.3% !important;
+    grid-template-columns:minmax(0,1fr) minmax(130px,.25fr) !important;
+    gap:10px !important;
+  }
+  .mention-copy{
+    gap:8px !important;
+  }
+  .mention-label{font-size:10px !important}
+  .mention-detail{font-size:7.5px !important}
+  .mention-value{font-size:10px !important}
+}
+
+@media(max-width:700px){
+  .mention-row{
+    left:20.1% !important;
+    right:14.3% !important;
+    grid-template-columns:minmax(0,1fr) 92px !important;
+    padding:0 5px !important;
+  }
+  .mention-copy{
+    display:block !important;
+  }
+  .mention-label{
+    display:block !important;
+    font-size:8.3px !important;
+    white-space:normal !important;
+  }
+  .mention-detail{
+    display:block !important;
+    font-size:6.8px !important;
+    margin-top:2px !important;
+    white-space:normal !important;
+  }
+  .mention-value{
+    font-size:8.3px !important;
+  }
+}
+
+
+
+/* V6.20 — Mentions honorables : intégration du nouveau visuel large */
+.mention-row{
+  left:15.8% !important;
+  right:12.8% !important;
+  height:10.9% !important;
+  grid-template-columns:minmax(0,1fr) minmax(245px,.31fr) !important;
+  gap:22px !important;
+  padding:0 14px !important;
+}
+
+.mention-row:nth-child(1){top:24.0% !important}
+.mention-row:nth-child(2){top:35.95% !important}
+.mention-row:nth-child(3){top:47.95% !important}
+.mention-row:nth-child(4){top:59.95% !important}
+.mention-row:nth-child(5){top:71.95% !important}
+
+.mention-copy{
+  gap:18px !important;
+}
+.mention-label{
+  font-size:clamp(14px,1.04vw,20px) !important;
+}
+.mention-detail{
+  font-size:clamp(9px,.70vw,12.5px) !important;
+}
+.mention-value{
+  font-size:clamp(14px,1.04vw,20px) !important;
+}
+
+@media(max-width:900px){
+  .mention-row{
+    left:15.8% !important;
+    right:12.8% !important;
+    grid-template-columns:minmax(0,1fr) minmax(150px,.30fr) !important;
+    gap:12px !important;
+  }
+  .mention-copy{gap:9px !important;}
+  .mention-label{font-size:10.5px !important}
+  .mention-detail{font-size:7.7px !important}
+  .mention-value{font-size:10.5px !important}
+}
+
+@media(max-width:700px){
+  .mention-row{
+    left:15.8% !important;
+    right:12.8% !important;
+    grid-template-columns:minmax(0,1fr) 104px !important;
+    padding:0 6px !important;
+  }
+  .mention-label{font-size:8.5px !important}
+  .mention-detail{font-size:6.9px !important}
+  .mention-value{font-size:8.5px !important}
+}
+
+
+
+/* V6.21 — Mentions honorables : fond 100 % vierge, tout le texte est HTML */
+.visual-mentions{aspect-ratio:2029/775}
+.visual-mentions>img{width:100%;height:100%;object-fit:fill}
+
+.mentions-title{
+  position:absolute;
+  left:21.6%;
+  top:6.4%;
+  width:55%;
+  height:12.5%;
+  display:flex;
+  align-items:center;
+  color:#eafff2;
+  font-size:clamp(29px,3.25vw,64px);
+  line-height:1;
+  font-weight:900;
+  letter-spacing:-.025em;
+  text-shadow:
+    0 0 5px rgba(255,255,255,.85),
+    0 0 12px rgba(72,255,151,.88),
+    0 0 26px rgba(32,220,120,.48);
+  z-index:3;
+  white-space:nowrap;
+}
+
+.mention-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
+}
+
+.mention-row{
+  position:absolute !important;
+  left:22.25% !important;
+  right:14.35% !important;
+  height:10.15% !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 15.2vw !important;
+  align-items:center !important;
+  gap:24px !important;
+  padding:0 14px !important;
+  text-shadow:0 2px 5px #000 !important;
+}
+
+.mention-row:nth-child(1){top:23.6% !important}
+.mention-row:nth-child(2){top:35.15% !important}
+.mention-row:nth-child(3){top:46.8% !important}
+.mention-row:nth-child(4){top:58.45% !important}
+.mention-row:nth-child(5){top:70.1% !important}
+
+.mention-copy{
+  display:flex !important;
+  align-items:center !important;
+  gap:18px !important;
+  min-width:0 !important;
+  height:100% !important;
+}
+
+.mention-label{
+  color:#fff !important;
+  font-size:clamp(13px,1.08vw,21px) !important;
+  line-height:1.04 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+}
+
+.mention-detail{
+  color:#d4f4df !important;
+  font-size:clamp(9px,.72vw,13px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+
+.mention-value{
+  color:#fff !important;
+  font-size:clamp(13px,1.05vw,20px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  overflow-wrap:anywhere !important;
+  justify-self:stretch !important;
+}
+
+/* Aucune icône HTML dans ce bloc : elles sont intégrées au visuel. */
+.visual-mentions .vrow,
+.visual-mentions .ico{display:none !important}
+
+@media(max-width:1000px){
+  .mentions-title{
+    font-size:clamp(22px,3.4vw,42px);
+  }
+  .mention-row{
+    grid-template-columns:minmax(0,1fr) 150px !important;
+    gap:11px !important;
+  }
+  .mention-copy{gap:8px !important}
+  .mention-label{font-size:10.5px !important}
+  .mention-detail{font-size:7.7px !important}
+  .mention-value{font-size:10.5px !important}
+}
+
+@media(max-width:700px){
+  .mentions-title{
+    left:21.6%;
+    top:6.4%;
+    font-size:19px;
+  }
+  .mention-row{
+    left:22.25% !important;
+    right:14.35% !important;
+    grid-template-columns:minmax(0,1fr) 92px !important;
+    gap:6px !important;
+    padding:0 5px !important;
+  }
+  .mention-copy{
+    display:block !important;
+  }
+  .mention-label{
+    display:block !important;
+    font-size:8.2px !important;
+    white-space:normal !important;
+  }
+  .mention-detail{
+    display:block !important;
+    font-size:6.7px !important;
+    margin-top:2px !important;
+    white-space:normal !important;
+  }
+  .mention-value{
+    font-size:8.2px !important;
+  }
+}
+
+
+
+/* V6.22 — Mentions honorables : fond vierge final sans petites barres */
+.visual-mentions{
+  aspect-ratio:2029/775 !important;
+}
+.visual-mentions>img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:fill !important;
+}
+
+.mentions-title{
+  left:21.7% !important;
+  top:6.0% !important;
+  width:55% !important;
+  height:13% !important;
+  display:flex !important;
+  align-items:center !important;
+  font-size:clamp(30px,3.2vw,64px) !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+/* Chaque ligne correspond directement à une case du visuel. */
+.mention-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
+}
+
+.mention-row{
+  position:absolute !important;
+  left:21.35% !important;
+  right:14.45% !important;
+  height:10.15% !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 22.5% !important;
+  align-items:center !important;
+  column-gap:2.1% !important;
+  padding:0 !important;
+  text-shadow:0 2px 5px #000 !important;
+}
+.mention-row:nth-child(1){top:23.55% !important}
+.mention-row:nth-child(2){top:35.15% !important}
+.mention-row:nth-child(3){top:46.75% !important}
+.mention-row:nth-child(4){top:58.35% !important}
+.mention-row:nth-child(5){top:69.95% !important}
+
+/* Zone gauche : intitulé + stat sur une seule ligne, libre de toute barre décorative. */
+.mention-copy{
+  display:flex !important;
+  align-items:center !important;
+  min-width:0 !important;
+  gap:18px !important;
+  padding-left:1.0% !important;
+  padding-right:1.5% !important;
+}
+.mention-label{
+  color:#fff !important;
+  font-size:clamp(13px,1.04vw,20px) !important;
+  line-height:1.04 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+}
+.mention-detail{
+  color:#d4f4df !important;
+  font-size:clamp(9px,.70vw,12.5px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+
+/* Case droite : valeur/pseudo dynamique centré dans sa propre case. */
+.mention-value{
+  color:#fff !important;
+  font-size:clamp(13px,1.04vw,20px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  justify-self:stretch !important;
+  align-self:center !important;
+  overflow-wrap:anywhere !important;
+}
+
+/* Les icônes restent uniquement dans l'image. */
+.visual-mentions .vrow,
+.visual-mentions .ico{
+  display:none !important;
+}
+
+@media(max-width:1000px){
+  .mentions-title{font-size:clamp(22px,3.3vw,42px) !important}
+  .mention-row{
+    grid-template-columns:minmax(0,1fr) 23% !important;
+    column-gap:1.8% !important;
+  }
+  .mention-copy{gap:9px !important}
+  .mention-label{font-size:10.5px !important}
+  .mention-detail{font-size:7.7px !important}
+  .mention-value{font-size:10.5px !important}
+}
+
+@media(max-width:700px){
+  .mentions-title{
+    left:21.7% !important;
+    top:6.0% !important;
+    font-size:19px !important;
+  }
+  .mention-row{
+    left:21.35% !important;
+    right:14.45% !important;
+    grid-template-columns:minmax(0,1fr) 24% !important;
+    column-gap:1.5% !important;
+  }
+  .mention-copy{
+    display:block !important;
+    padding-left:1% !important;
+  }
+  .mention-label{
+    display:block !important;
+    font-size:8.2px !important;
+    white-space:normal !important;
+  }
+  .mention-detail{
+    display:block !important;
+    font-size:6.7px !important;
+    margin-top:2px !important;
+    white-space:normal !important;
+  }
+  .mention-value{font-size:8.2px !important}
+}
+
+
+
+/* ==========================================================
+   V6.23 — WALL OF SHAME
+   Nouveau fond propre, icônes intégrées à l'image.
+   Tout le texte reste dynamique en HTML.
+   Les 7 lignes sont volontairement réglables une par une.
+   ========================================================== */
+
+.visual-shame{
+  aspect-ratio:4/3 !important;
+}
+.visual-shame>img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:fill !important;
+}
+
+.shame-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
+}
+
+.shame-rows .vrow{
+  position:absolute !important;
+  left:15.25% !important;
+  right:6.70% !important;
+  height:7.95% !important;
+
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 34.5% !important;
+  align-items:center !important;
+  column-gap:2.2% !important;
+
+  padding:0 !important;
+  color:#ff8b98 !important;
+  text-shadow:0 2px 5px #000 !important;
+  transform:none !important;
+}
+
+/* 1 — Impo en période d’essai */
+.shame-rows .vrow:nth-child(1){top:17.10% !important}
+
+/* 2 — Abonné au SAS */
+.shame-rows .vrow:nth-child(2){top:27.15% !important}
+
+/* 3 — Imposteur le plus souvent éjecté */
+.shame-rows .vrow:nth-child(3){top:37.40% !important}
+
+/* 4 — Fantôme ultime */
+.shame-rows .vrow:nth-child(4){top:47.65% !important}
+
+/* 5 — Le départ express */
+.shame-rows .vrow:nth-child(5){top:57.90% !important}
+
+/* 6 — Suspect même innocent */
+.shame-rows .vrow:nth-child(6){top:68.05% !important}
+
+/* 7 — Soirée Crew sans victoire */
+.shame-rows .vrow:nth-child(7){top:78.40% !important}
+
+/* Les icônes sont désormais dans l'image, pas en HTML. */
+.visual-shame .vrow .ico{
+  display:none !important;
+}
+
+/* Partie gauche : intitulé + petite statistique côte à côte. */
+.visual-shame .vrow > div{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:14px !important;
+  min-width:0 !important;
+  height:100% !important;
+  padding-left:1.5% !important;
+  padding-right:1.5% !important;
+  transform:none !important;
+}
+
+.visual-shame .vlabel{
+  color:#fff !important;
+  font-size:clamp(12px,.92vw,17px) !important;
+  line-height:1.04 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+
+.visual-shame small{
+  display:block !important;
+  color:#e2cdd2 !important;
+  font-size:clamp(8px,.57vw,10.5px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+
+/* Partie droite : pseudo / résultat. */
+.visual-shame .vrow > strong{
+  color:#fff !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  font-size:clamp(12px,.92vw,17px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  min-width:0 !important;
+  height:100% !important;
+  padding:0 2% !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+
+@media(max-width:900px){
+  .visual-shame .vrow > div{
+    grid-template-columns:1fr !important;
+    row-gap:2px !important;
+  }
+  .visual-shame small{
+    text-align:left !important;
+  }
+}
+
+@media(max-width:700px){
+  .shame-rows .vrow{
+    left:15.25% !important;
+    right:6.70% !important;
+    grid-template-columns:minmax(0,1fr) 34.5% !important;
+  }
+  .visual-shame .vlabel,
+  .visual-shame .vrow > strong{
+    font-size:8.4px !important;
+  }
+  .visual-shame small{
+    display:none !important;
+  }
+}
+
