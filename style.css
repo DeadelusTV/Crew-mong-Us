@@ -1381,7 +1381,7 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   display:grid !important;
   grid-template-columns:minmax(0,1fr) auto !important;
   align-items:center !important;
-  column-gap:14px !important;
+  column-gap:30px !important;
 
   padding-left:2% !important;
   padding-right:7% !important;
