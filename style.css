@@ -1493,3 +1493,7 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .visual-win .method-inline{
     position:static !important;
 }
+/* Taux de win - baisser la barre */
+.visual-win .winbar{
+    top:78% !important;
+}
