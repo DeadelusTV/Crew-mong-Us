@@ -1429,8 +1429,9 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 }
 
 /* ===== TAUX DE WIN : bloc gauche ===== */
-.visual-win .vrow > div,
-.win-rows .vrow > div{
+
+.visual-win .imp-row > div:first-child,
+.visual-win .crew-row > div:first-child{
     position:relative !important;
     left:22px !important;
     top:10px !important;
