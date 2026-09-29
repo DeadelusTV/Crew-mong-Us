@@ -1475,7 +1475,7 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     position:absolute !important;
 
     /* zone disponible entre le personnage et la séparation verticale */
-    left:8% !important;
+    left:0% !important;
     right:34% !important;
 
     top:50% !important;
