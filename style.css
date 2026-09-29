@@ -1427,5 +1427,44 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     width:100% !important;
     height:100% !important;
 }
+/* ===== TAUX DE WIN - nouveau cadre ===== */
 
+/* Position des deux zones */
+.visual-win .imp-row{
+    top:39% !important;
+    left:18% !important;
+    right:5.5% !important;
+    height:16% !important;
+}
 
+.visual-win .crew-row{
+    top:58.5% !important;
+    left:18% !important;
+    right:5.5% !important;
+    height:16% !important;
+}
+
+/* Bloc intitulé + détail */
+.visual-win .imp-row > div:first-child,
+.visual-win .crew-row > div:first-child{
+    position:absolute !important;
+    left:0 !important;
+    top:50% !important;
+    transform:translateY(-50%) !important;
+}
+
+.visual-win .win-label{
+    display:block !important;
+    font-size:22px !important;
+    font-weight:900 !important;
+    line-height:1 !important;
+    margin-bottom:7px !important;
+    color:white !important;
+}
+
+/* On annule l'ancien positionnement bizarre du petit texte */
+.visual-win .method-inline{
+    position:static !important;
+    font-size:12px !important;
+    line-height:1.1 !important;
+}
