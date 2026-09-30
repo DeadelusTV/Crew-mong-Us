@@ -1912,7 +1912,7 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 /* Intitulé légèrement décalé vers la droite
    + la stat peut aller jusqu'au bord droit de la cellule */
 .visual-hall .vrow > div{
-  padding-left:1.8% !important;
+  padding-left:2.5% !important;
   padding-right:0 !important;
 }
 
@@ -1932,4 +1932,5 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   padding:0 !important;
   white-space:normal !important;
   line-height:1.08 !important;
+  transform:translateX(3px) !important;
 }
