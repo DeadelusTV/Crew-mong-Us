@@ -1682,3 +1682,7 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     justify-content:flex-start;
   }
 }
+
+
+/* ===== Fiche joueur : tableau Games avec colonne Sortie ===== */
+.wide-table{min-width:1380px}
