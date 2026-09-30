@@ -155,12 +155,12 @@ function renderStats(){
  const maxCS=Math.max(...tracked.map(x=>x.crew.length/x.rr.length)),career=tracked.filter(x=>x.crew.length/x.rr.length===maxCS),never=impP.filter(x=>x.impEjected===0);
  document.getElementById("hall").innerHTML=[
  vrow(all?"IAOT — Impo of all time":"Imposteur du mois",iaot.map(x=>x.name).join(", "),`${pct(maxIR,1)} de victoires Imposteur`,"crown"),
- vrow("Boss final",mostIW.name,`${mostIW.impWins} victoires • ${pct(mostIW.impWins,mostIW.imp.length)}`,"star"),
- vrow("Valeur sûre du Crew",bestC.map(x=>x.name).join(", "),`${pct(maxCR,1)} • ${bestC.map(x=>`${x.crewWins}/${x.crew.length}`).join(" • ")}`,"medal"),
- vrow("Abonné au côté obscur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} • ${mostIG.imp.length}/${mostIG.rr.length} games`,"users"),
+ vrow("Boss final",mostIW.name,`${mostIW.impWins} victoires en Imposteur • ${pct(mostIW.impWins,mostIW.imp.length)}`,"star"),
+ vrow("Valeur sûre du Crew",bestC.map(x=>x.name).join(", "),`${pct(maxCR,1)} de victoires Crew • ${bestC.map(x=>`${x.crewWins}/${x.crew.length}`).join(" • ")}`,"medal"),
+ vrow("Abonné au côté obscur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} en Imposteur • ${mostIG.imp.length}/${mostIG.rr.length} games`,"users"),
  vrow("Le Crewmate de carrière",career.map(x=>x.name).join(", "),`${pct(maxCS,1)} Crew • ${career[0].crew.length}/${career[0].rr.length} games`,"shield"),
- vrow("Sous les radars",never.map(x=>x.name).join(", "),never.map(x=>`0/${x.imp.length}`).join(" • "),"infinity"),
- vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?`${pct(bestTaskRate,1)} des quêtes • ${bestTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","bolt")
+ vrow("Sous les radars",never.map(x=>x.name).join(", "),never.map(x=>`0 éjection sur ${x.imp.length} Imposteur`).join(" • "),"infinity"),
+ vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?`${pct(bestTaskRate,1)} des quêtes complétées • ${bestTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","bolt")
  ].join("");
 
  const zero=impP.filter(x=>x.impWins===0),sas=impP.filter(x=>x.impEjected===x.imp.length),maxER=Math.max(...impP.map(x=>x.impEjected/x.imp.length)),mostE=impP.filter(x=>x.impEjected/x.imp.length===maxER);
@@ -173,7 +173,7 @@ function renderStats(){
  vrow("Le départ express",express.map(x=>x.name).join(", "),`Mort en premier ${express[0].firstDeath} fois • ${pct(maxFR,1)}`,"fast"),
  vrow("Accusé idéal",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
  vrow("Soirée noire",noCW.length?noCW.map(x=>x.name).join(", "):"Personne",noCW.length?"0 victoire Crew":"Aucun joueur concerné","sad"),
- vrow("Éternel vacancier",worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données",worstTasks.length?`${pct(worstTaskRate,1)} des quêtes • ${worstTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","sad")
+ vrow("Éternel vacancier",worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données",worstTasks.length?`${pct(worstTaskRate,1)} des quêtes complétées • ${worstTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","sad")
  ].join("");
 
  const avgT1=games.length?games.reduce((a,g)=>a+(g.t1Deaths||0),0)/games.length:0,maxDeaths=Math.max(0,...games.map(g=>g.t1Deaths||0)),maxTimes=games.filter(g=>(g.t1Deaths||0)===maxDeaths).length;
@@ -181,8 +181,8 @@ function renderStats(){
  const maxRisk=Math.max(...crewP.map(x=>x.t1/x.crew.length)),risk=crewP.filter(x=>x.t1/x.crew.length===maxRisk),noT1=crewP.filter(x=>x.t1===0);
  document.getElementById("t1-rows").innerHTML=[
  t1row("Mort le plus souvent",ghost.map(x=>x.name).join(", "),`${maxT1} fois`),
- t1row("Plus grand risque",risk.map(x=>x.name).join(", "),`${pct(maxRisk,1)} • ${risk[0].t1}/${risk[0].crew.length} games Crew`),
- t1row("Maximum de morts",`${maxDeaths} morts`,`Record atteint ${maxTimes} fois`),
+ t1row("Taux de décès T1",risk.map(x=>x.name).join(", "),`${pct(maxRisk,1)} de mort T1 • ${risk[0].t1}/${risk[0].crew.length} games Crew`),
+ t1row("Maximum de kills",`${maxDeaths} morts`,`Record atteint ${maxTimes} fois`),
  t1row("Aucun décès T1",noT1.length?noT1.map(x=>x.name).join(", "):"Personne",noT1.length?noT1.map(x=>`0/${x.crew.length}`).join(" • "):"")
  ].join("");
 
@@ -190,8 +190,8 @@ function renderStats(){
  const mapStats={};games.forEach(g=>{mapStats[g.map]??={total:0,imp:0,crew:0};mapStats[g.map].total++;g.winner==="Imposteurs"?mapStats[g.map].imp++:mapStats[g.map].crew++});
  const bestIM=Math.max(...Object.values(mapStats).map(x=>x.imp/x.total)),impMaps=Object.entries(mapStats).filter(([,x])=>x.imp/x.total===bestIM),bestCM=Math.max(...Object.values(mapStats).map(x=>x.crew/x.total)),crewMaps=Object.entries(mapStats).filter(([,x])=>x.crew/x.total===bestCM);
  document.getElementById("mentions").innerHTML=[
- mentionRow("Record de nombre de kills",topK.map(x=>x.name).join(", "),`${topKG} kills dans une game`),
- mentionRow("Meilleur réparateur",repairers.map(x=>x.name).join(", "),`${bestRepair} réparations au total`),
+ mentionRow("Serial Killer",topK.map(x=>x.name).join(", "),`${topKG} kills dans une game`),
+ mentionRow("SOS Réparation",repairers.map(x=>x.name).join(", "),`${bestRepair} réparations au total`),
  mentionRow("Sabotage préféré des Imposteurs",favSab?favSab.name:"Non renseigné",favSab?`${favSab.count} utilisations détaillées`:""),
  mentionRow("Map préférée des Imposteurs",impMaps.map(([m])=>m).join(" & "),`${pct(bestIM,1)} de victoires`),
  mentionRow("Map la plus favorable au Crew",crewMaps.map(([m])=>m).join(" & "),`${pct(bestCM,1)} de victoires`)
