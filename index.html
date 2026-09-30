@@ -141,7 +141,7 @@
           <div class="subpanel"><h3>Statistiques</h3><div id="p-stats" class="kv"></div></div>
           <div class="subpanel"><h3>Maps & sabotage</h3><div id="p-maps" class="map-list"></div><div id="p-sabotage" class="favorite-box"></div></div>
         </div>
-        <div class="subpanel gap-top"><h3>Games</h3><div class="table-wrap"><table class="wide-table"><thead><tr><th>Game</th><th>Map</th><th>Rôle</th><th>Résultat</th><th>Fin</th><th>Reports</th><th>Self</th><th>Sabotages</th><th>Réparations</th><th>Kills / mort</th><th>Tour</th><th>Quêtes</th><th>Note</th></tr></thead><tbody id="p-games"></tbody></table></div></div>
+        <div class="subpanel gap-top"><h3>Games</h3><div class="table-wrap"><table class="wide-table"><thead><tr><th>Game</th><th>Map</th><th>Rôle</th><th>Résultat</th><th>Fin</th><th>Reports</th><th>Self</th><th>Sabotages</th><th>Réparations</th><th>Kills / mort</th><th>Ordre de mort</th><th>Tour</th><th>Quêtes</th><th>Note</th></tr></thead><tbody id="p-games"></tbody></table></div></div>
       </article>
     </div>
   </section>
@@ -204,7 +204,20 @@
         <div><div class="section-title"><span class="section-icon">⚙</span><h2>Administration</h2></div><p>Supprime une fiche ou restaure les données de démonstration.</p></div>
         <button id="admin-reset" class="secondary">Restaurer les données</button>
       </div>
-      <div class="subpanel admin-participants-panel">
+      <div class="subpanel admin-session-create">
+        <div class="subpanel-head">
+          <div>
+            <h3>Ajouter une session</h3>
+            <p>Crée une nouvelle soirée à partir de sa date. Elle sera ensuite disponible dans Sessions, Saisie et la sélection des participants.</p>
+          </div>
+          <button id="admin-add-session-btn" class="primary" type="button">+ Ajouter</button>
+        </div>
+        <label class="admin-session-date">Date
+          <input id="admin-new-session-date" type="date">
+        </label>
+        <span id="admin-session-status" class="muted"></span>
+      </div>
+      <div class="subpanel admin-participants-panel gap-top">
         <div class="subpanel-head">
           <div>
             <h3>Participants de la soirée</h3>
