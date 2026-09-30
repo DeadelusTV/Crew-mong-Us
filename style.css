@@ -1942,15 +1942,15 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 
 /* Intitulés vers la droite */
 .visual-shame .vlabel{
-  transform:translateX(8px) !important;
+  transform:translateX(14px) !important;
 }
 
 /* Petites stats très légèrement vers la droite */
 .visual-shame small{
-  transform:translateX(3px) !important;
+  transform:translateX(6px) !important;
 }
 
 /* Pseudos vers la gauche */
 .visual-shame .vrow > strong{
-  transform:translateX(-8px) !important;
+  transform:translateX(-14px) !important;
 }
