@@ -155,11 +155,11 @@ function renderStats(){
  const maxCS=Math.max(...tracked.map(x=>x.crew.length/x.rr.length)),career=tracked.filter(x=>x.crew.length/x.rr.length===maxCS),never=impP.filter(x=>x.impEjected===0);
  document.getElementById("hall").innerHTML=[
  vrow(all?"IAOT — Impo of all time":"Imposteur du mois",iaot.map(x=>x.name).join(", "),`${pct(maxIR,1)} de victoires Imposteur`,"crown"),
- vrow("Le plus de victoires en Imposteur",mostIW.name,`${mostIW.impWins} victoires • ${pct(mostIW.impWins,mostIW.imp.length)}`,"star"),
- vrow("Meilleur taux de victoire Crew",bestC.map(x=>x.name).join(", "),`${pct(maxCR,1)} • ${bestC.map(x=>`${x.crewWins}/${x.crew.length}`).join(" • ")}`,"medal"),
- vrow("Le plus de fois Imposteur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} • ${mostIG.imp.length}/${mostIG.rr.length} games`,"users"),
+ vrow("Boss final",mostIW.name,`${mostIW.impWins} victoires • ${pct(mostIW.impWins,mostIW.imp.length)}`,"star"),
+ vrow("Valeur sûre du Crew",bestC.map(x=>x.name).join(", "),`${pct(maxCR,1)} • ${bestC.map(x=>`${x.crewWins}/${x.crew.length}`).join(" • ")}`,"medal"),
+ vrow("Abonné au côté obscur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} • ${mostIG.imp.length}/${mostIG.rr.length} games`,"users"),
  vrow("Le Crewmate de carrière",career.map(x=>x.name).join(", "),`${pct(maxCS,1)} Crew • ${career[0].crew.length}/${career[0].rr.length} games`,"shield"),
- vrow("Imposteur jamais éjecté",never.map(x=>x.name).join(", "),never.map(x=>`0/${x.imp.length}`).join(" • "),"infinity"),
+ vrow("Sous les radars",never.map(x=>x.name).join(", "),never.map(x=>`0/${x.imp.length}`).join(" • "),"infinity"),
  vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?`${pct(bestTaskRate,1)} des quêtes • ${bestTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","bolt")
  ].join("");
 
