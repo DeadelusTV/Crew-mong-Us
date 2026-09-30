@@ -163,12 +163,12 @@ function renderStats(){
  vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?`${pct(bestTaskRate,1)} des quêtes complétées • ${bestTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","bolt")
  ].join("");
 
- const zero=impP.filter(x=>x.impWins===0),sas=impP.filter(x=>x.impEjected===x.imp.length),maxER=Math.max(...impP.map(x=>x.impEjected/x.imp.length)),mostE=impP.filter(x=>x.impEjected/x.imp.length===maxER);
+ const zero=impP.filter(x=>x.impWins===0),maxE=Math.max(...impP.map(x=>x.impEjected)),sas=impP.filter(x=>x.impEjected===maxE),maxER=Math.max(...impP.map(x=>x.impEjected/x.imp.length)),mostE=impP.filter(x=>x.impEjected/x.imp.length===maxER);
  const maxT1=Math.max(...tracked.map(x=>x.t1)),ghost=tracked.filter(x=>x.t1===maxT1),maxFR=Math.max(...crewP.map(x=>x.firstDeath/x.crew.length)),express=crewP.filter(x=>x.firstDeath/x.crew.length===maxFR),maxCE=Math.max(...tracked.map(x=>x.crewEjected)),sus=tracked.filter(x=>x.crewEjected===maxCE&&maxCE>0),noCW=crewP.filter(x=>x.crewWins===0);
  document.getElementById("shame").innerHTML=[
- vrow("Impo en période d’essai",zero.length?zero.map(x=>x.name).join(", "):"Personne",zero.length?zero.map(x=>`0/${x.imp.length}`).join(" • "):"Aucun joueur concerné","cone"),
- vrow("Abonné au SAS",sas.length?sas.map(x=>x.name).join(", "):"Personne",sas.length?"100% éjecté en imposteur":"","eject"),
- vrow("VIP du SAS",mostE.map(x=>x.name).join(", "),`${mostE[0].impEjected}/${mostE[0].imp.length} • ${pct(maxER,1)}`,"x"),
+ vrow("Impo en période d’essai",zero.length?zero.map(x=>x.name).join(", "):"Personne",zero.length?zero.map(x=>`${x.impWins} victoire${x.impWins>1?"s":""} sur ${x.imp.length} game${x.imp.length>1?"s":""} Imposteur`).join(" • "):"Aucun joueur concerné","cone"),
+ vrow("Abonné au SAS",sas.length?sas.map(x=>x.name).join(", "):"Personne",sas.length?`${maxE} éjection${maxE>1?"s":""} en Imposteur`:"Aucun joueur concerné","eject"),
+ vrow("VIP du SAS",mostE.map(x=>x.name).join(", "),`${mostE[0].impEjected} éjection${mostE[0].impEjected>1?"s":""} sur ${mostE[0].imp.length} game${mostE[0].imp.length>1?"s":""} • ${pct(maxER,1)}`,"x"),
  vrow("Fantôme ultime",ghost.map(x=>x.name).join(", "),`Mort en T1 ${maxT1} fois`,"ghost"),
  vrow("Le départ express",express.map(x=>x.name).join(", "),`Mort en premier ${express[0].firstDeath} fois • ${pct(maxFR,1)}`,"fast"),
  vrow("Accusé idéal",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
