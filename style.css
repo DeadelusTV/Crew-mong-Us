@@ -1932,5 +1932,9 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   padding:0 !important;
   white-space:normal !important;
   line-height:1.08 !important;
-  transform:translateX(10px) !important;
+  transform:translate(10px,-2px) !important;
+}
+/* Intitulés légèrement plus haut */
+.visual-hall .vlabel{
+  transform:translateY(-2px) !important;
 }
