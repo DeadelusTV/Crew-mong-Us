@@ -1595,3 +1595,26 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .admin-session-date input{
   width:100%;
 }
+
+
+/* ===== Fiche joueur : lien Twitch ===== */
+.player-twitch-link{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:5px;
+  color:#aebfd0;
+  text-decoration:none;
+  font-size:14px;
+  font-weight:700;
+  transition:.15s ease;
+}
+.player-twitch-link:hover{
+  color:#c9a7ff;
+  text-shadow:0 0 12px rgba(169,101,255,.45);
+}
+.player-twitch-link:focus-visible{
+  outline:2px solid var(--cyan);
+  outline-offset:4px;
+  border-radius:4px;
+}
