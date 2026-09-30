@@ -241,6 +241,25 @@
         <div id="admin-participants-list" class="participant-grid"></div>
         <span id="admin-participants-status" class="muted"></span>
       </div>
+      <div class="subpanel admin-players-panel gap-top">
+        <div class="subpanel-head">
+          <div>
+            <h3>Gérer les streamers</h3>
+            <p>Ajoute les membres du Crew qui pourront ensuite être sélectionnés dans la saisie et apparaître dans la page Joueurs.</p>
+          </div>
+        </div>
+        <div class="admin-player-form">
+          <label>Nom affiché
+            <input id="admin-player-name" type="text" placeholder="NouveauStreamer" maxlength="40">
+          </label>
+          <label>Pseudo Twitch
+            <input id="admin-player-handle" type="text" placeholder="nouveau_streamer" maxlength="40">
+          </label>
+          <button id="admin-add-player-btn" class="primary" type="button">+ Ajouter le streamer</button>
+        </div>
+        <span id="admin-player-status" class="muted"></span>
+        <div id="admin-players-list" class="admin-players-list"></div>
+      </div>
       <div id="admin-list" class="admin-list gap-top"></div>
     </article>
   </section>
