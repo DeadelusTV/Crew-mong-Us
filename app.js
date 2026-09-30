@@ -54,7 +54,7 @@ const SEED_RECORDS=[
 const SABOTAGE_TYPES=["Oxygène","Réacteur","Lumières","Radio","Sismiques","Portes","Champignon"];
 const RECORD_STORAGE="crewmongus-v6-records",GAME_STORAGE="crewmongus-v6-games",PARTICIPANT_STORAGE="crewmongus-v6-session-participants",SESSION_STORAGE="crewmongus-v6-sessions";
 let SESSIONS=loadJson(SESSION_STORAGE,SEED_SESSIONS);
-const DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,PLAYERS.map(p=>p.name)]));
+const DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));
 let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS);
 let currentScope=latestMonth(),currentPlayer="Bunny_Island",currentPlayerMonth=latestMonth(),currentPlayerMode="month";
 
@@ -77,7 +77,7 @@ function refreshSessionSelectors(){
  formSession.innerHTML=ids.map(id=>`<option value="${esc(id)}">${esc(SESSIONS[id]?.label||id)}</option>`).join("");formSession.value=ids.includes(oldForm)?oldForm:(ids[0]||"");
 }
 function sortedPlayers(){return [...PLAYERS].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}))}
-function participantNamesForSession(session){const saved=SESSION_PARTICIPANTS[session];return Array.isArray(saved)?saved:PLAYERS.map(p=>p.name)}
+function participantNamesForSession(session){const saved=SESSION_PARTICIPANTS[session];return Array.isArray(saved)?saved:[]}
 function participantsForSession(session){const allowed=new Set(participantNamesForSession(session));return sortedPlayers().filter(p=>allowed.has(p.name))}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function pct(n,d){return d?(n/d*100).toFixed(1).replace(".",",")+" %":"0 %"}
@@ -247,7 +247,7 @@ function addAdminSession(){
  if(!id){status.textContent="Choisis une date.";return}
  if(SESSIONS[id]){status.textContent="Cette session existe déjà.";return}
  SESSIONS[id]=sessionMetaFromId(id);
- SESSION_PARTICIPANTS[id]=sortedPlayers().map(p=>p.name);
+ SESSION_PARTICIPANTS[id]=[];
  saveAll();refreshSessionSelectors();
  document.getElementById("form-session").value=id;populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();
  renderSessions();renderAdminParticipants();
@@ -275,6 +275,6 @@ function saveAdminParticipants(){
 }
 function renderAdmin(){renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><button class="danger" data-i="${idx}">Supprimer</button></div>`}).join("");box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);
-document.getElementById("admin-reset").addEventListener("click",()=>{SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,PLAYERS.map(p=>p.name)]));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
+document.getElementById("admin-reset").addEventListener("click",()=>{SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
 function renderAll(){renderStats();renderSessions();renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}
 refreshSessionSelectors();initEntry();renderAll();
