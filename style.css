@@ -1147,8 +1147,8 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .mention-row:nth-child(1){top:23.55% !important}
 .mention-row:nth-child(2){top:35.15% !important}
 .mention-row:nth-child(3){top:46.75% !important}
-.mention-row:nth-child(4){top:58.35% !important}
-.mention-row:nth-child(5){top:69.95% !important}
+.mention-row:nth-child(4){top:58.65% !important}
+.mention-row:nth-child(5){top:70.55% !important}
 
 /* Zone gauche : intitulé + stat sur une seule ligne, libre de toute barre décorative. */
 .mention-copy{
