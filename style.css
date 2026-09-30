@@ -1594,6 +1594,12 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .admin-player-row small{display:block;color:var(--muted);margin-top:4px}
 .admin-player-actions{display:flex;align-items:center;gap:8px}
 .admin-player-delete:disabled{opacity:.45;cursor:not-allowed}
+.admin-player-row.inactive{opacity:.72}
+.admin-player-row.inactive strong{opacity:.8}
+.admin-player-row small{line-height:1.35}
+.admin-player-actions{flex-wrap:wrap}
+#admin-player-status{display:block;margin-top:6px}
+.participant-check.inactive{opacity:.55}
 @media(max-width:800px){
   .admin-player-form{grid-template-columns:1fr;align-items:stretch}
   .admin-player-row{grid-template-columns:1fr}
