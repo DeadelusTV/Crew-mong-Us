@@ -1515,3 +1515,34 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 
     gap:12px !important;
 }
+
+
+/* ===== Saisie : réparations Crew / sabotages Imposteur ===== */
+.entry-role-stack{
+  display:grid;
+  gap:16px;
+}
+.role-panel[hidden]{
+  display:none !important;
+}
+.repair-counter{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  margin-top:16px;
+}
+.repair-counter input{
+  width:84px;
+  text-align:center;
+  font-size:1.2rem;
+  font-weight:900;
+}
+.repair-counter button{
+  min-width:46px;
+  font-size:1.2rem;
+  line-height:1;
+}
+.favorite-auto{
+  margin-top:14px;
+}
