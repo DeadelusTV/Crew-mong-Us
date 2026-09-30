@@ -190,8 +190,8 @@ function renderStats(){
  const mapStats={};games.forEach(g=>{mapStats[g.map]??={total:0,imp:0,crew:0};mapStats[g.map].total++;g.winner==="Imposteurs"?mapStats[g.map].imp++:mapStats[g.map].crew++});
  const bestIM=Math.max(...Object.values(mapStats).map(x=>x.imp/x.total)),impMaps=Object.entries(mapStats).filter(([,x])=>x.imp/x.total===bestIM),bestCM=Math.max(...Object.values(mapStats).map(x=>x.crew/x.total)),crewMaps=Object.entries(mapStats).filter(([,x])=>x.crew/x.total===bestCM);
  document.getElementById("mentions").innerHTML=[
- mentionRow("Serial Killer",topK.map(x=>x.name).join(", "),`${topKG} kills dans une game`),
- mentionRow("SOS Réparation",repairers.map(x=>x.name).join(", "),`${bestRepair} réparations au total`),
+ mentionRow("Serial Killer",topK.map(x=>x.name).join(", "),`${topKG} kills en une game`),
+ mentionRow("SOS Dépannage",repairers.map(x=>x.name).join(", "),`${bestRepair} réparations au total`),
  mentionRow("Sabotage préféré des Imposteurs",favSab?favSab.name:"Non renseigné",favSab?`${favSab.count} utilisations détaillées`:""),
  mentionRow("Map préférée des Imposteurs",impMaps.map(([m])=>m).join(" & "),`${pct(bestIM,1)} de victoires`),
  mentionRow("Map la plus favorable au Crew",crewMaps.map(([m])=>m).join(" & "),`${pct(bestCM,1)} de victoires`)
