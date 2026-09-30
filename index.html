@@ -204,7 +204,21 @@
         <div><div class="section-title"><span class="section-icon">⚙</span><h2>Administration</h2></div><p>Supprime une fiche ou restaure les données de démonstration.</p></div>
         <button id="admin-reset" class="secondary">Restaurer les données</button>
       </div>
-      <div id="admin-list" class="admin-list"></div>
+      <div class="subpanel admin-participants-panel">
+        <div class="subpanel-head">
+          <div>
+            <h3>Participants de la soirée</h3>
+            <p>Seuls les membres cochés apparaîtront dans la saisie de cette session. La page Joueurs garde tous les membres du Crew.</p>
+          </div>
+          <button id="save-participants-btn" class="primary" type="button">Enregistrer</button>
+        </div>
+        <label class="admin-session-select">Session
+          <select id="admin-participant-session"></select>
+        </label>
+        <div id="admin-participants-list" class="participant-grid"></div>
+        <span id="admin-participants-status" class="muted"></span>
+      </div>
+      <div id="admin-list" class="admin-list gap-top"></div>
     </article>
   </section>
 </main>
