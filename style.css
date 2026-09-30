@@ -1546,3 +1546,38 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .favorite-auto{
   margin-top:14px;
 }
+
+
+/* ===== Admin : participants par soirée ===== */
+.admin-participants-panel{
+  margin-bottom:18px;
+}
+.admin-session-select{
+  display:block;
+  max-width:280px;
+  margin:14px 0;
+}
+.participant-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
+  margin:12px 0 10px;
+}
+.participant-check{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:10px 12px;
+  border:1px solid rgba(130,190,255,.22);
+  border-radius:12px;
+  background:rgba(10,25,43,.42);
+  cursor:pointer;
+}
+.participant-check input{
+  width:18px;
+  height:18px;
+  accent-color:#39d98a;
+}
+.participant-check span{
+  font-weight:700;
+}
