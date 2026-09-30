@@ -173,7 +173,7 @@ function renderStats(){
  vrow("Le départ express",express.map(x=>x.name).join(", "),`Mort en premier ${express[0].firstDeath} fois • ${pct(maxFR,1)}`,"fast"),
  vrow("Accusé idéal",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
  vrow("Soirée noire",noCW.length?noCW.map(x=>x.name).join(", "):"Personne",noCW.length?"0 victoire Crew":"Aucun joueur concerné","sad"),
- vrow("Éternel vacancier",worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données",worstTasks.length?`${pct(worstTaskRate,1)} des quêtes complétées`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","sad")
+ vrow("Éternel vacancier",worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données",worstTasks.length?`${pct(worstTaskRate,1)} des quêtes complétées • ${worstTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","sad")
  ].join("");
 
  const avgT1=games.length?games.reduce((a,g)=>a+(g.t1Deaths||0),0)/games.length:0,maxDeaths=Math.max(0,...games.map(g=>g.t1Deaths||0)),maxTimes=games.filter(g=>(g.t1Deaths||0)===maxDeaths).length;
