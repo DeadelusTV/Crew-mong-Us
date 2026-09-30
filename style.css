@@ -1584,6 +1584,22 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 }
 
 
+/* ===== Admin : gestion des streamers ===== */
+.admin-players-panel{margin-bottom:18px}
+.admin-player-form{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto;gap:12px;align-items:end;margin:14px 0 10px}
+.admin-player-form label{display:block}
+.admin-player-form input{width:100%}
+.admin-players-list{display:grid;gap:10px;margin-top:14px}
+.admin-player-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px;border:1px solid #173f59;border-radius:11px;background:#071521}
+.admin-player-row small{display:block;color:var(--muted);margin-top:4px}
+.admin-player-actions{display:flex;align-items:center;gap:8px}
+.admin-player-delete:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:800px){
+  .admin-player-form{grid-template-columns:1fr;align-items:stretch}
+  .admin-player-row{grid-template-columns:1fr}
+  .admin-player-actions{justify-content:flex-start}
+}
+
 /* ===== Admin : création de session ===== */
 .admin-session-create{
   margin-bottom:18px;
