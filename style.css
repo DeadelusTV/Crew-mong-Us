@@ -1893,3 +1893,13 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     display:none !important;
   }
 }
+/* ===== Hall of Fame : pseudos plus étroits pour retour à la ligne ===== */
+.visual-hall .vrow > div:last-child{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  line-height:1.08 !important;
+  padding-left:8% !important;
+  padding-right:8% !important;
+}
