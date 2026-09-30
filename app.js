@@ -1,4 +1,4 @@
-const PLAYERS=[
+const SEED_PLAYERS=[
 {name:"Meteorann",handle:"meteorann"},{name:"DeadelusTV",handle:"deadelustv"},{name:"MrClegane",handle:"mrclegane"},
 {name:"Pwatrinn",handle:"pwatrinn"},{name:"RC_Imperator",handle:"rc_imperator"},{name:"Bunny_Island",handle:"_bunny_island_"},
 {name:"AnsyTV",handle:"ansytv"},{name:"MiguelAngelo_TV",handle:"_miguelangelo"},{name:"Psyster",handle:"psyster"},{name:"Jerlapive",handle:"jerlapive"}
@@ -56,17 +56,27 @@ const RECORD_STORAGE="crewmongus-v6-records",GAME_STORAGE="crewmongus-v6-games",
 let DELETED_SESSIONS=new Set(loadJson(DELETED_SESSION_STORAGE,[]));
 let SESSIONS=loadJson(SESSION_STORAGE,SEED_SESSIONS);
 const DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));
-let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS),CUSTOM_PLAYERS=loadJson(PLAYER_STORAGE,[]);
+let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS),MANAGED_PLAYERS=loadManagedPlayers();
 purgeDeletedSessions();
 let currentScope=latestMonth(),currentPlayer="Bunny_Island",currentPlayerMonth=latestMonth(),currentPlayerMode="month",editingRecordKey=null;
 
 function loadJson(key,seed){try{const v=localStorage.getItem(key);return v?JSON.parse(v):structuredClone(seed)}catch{return structuredClone(seed)}}
+function loadManagedPlayers(){
+ const saved=loadJson(PLAYER_STORAGE,[]);
+ const source=Array.isArray(saved)&&saved.length?saved:SEED_PLAYERS;
+ const map=new Map(SEED_PLAYERS.map(p=>[p.name.toLowerCase(),{...p,active:true}]));
+ source.forEach(p=>{
+   if(!p||!p.name||!p.handle)return;
+   map.set(String(p.name).toLowerCase(),{name:String(p.name),handle:String(p.handle),active:p.active!==false});
+ });
+ return [...map.values()];
+}
 function purgeDeletedSessions(){
  DELETED_SESSIONS.forEach(id=>{delete SESSIONS[id];delete SESSION_PARTICIPANTS[id]});
  GAMES=GAMES.filter(g=>!DELETED_SESSIONS.has(g.session));
  RECORDS=RECORDS.filter(r=>!DELETED_SESSIONS.has(r.session));
 }
-function saveAll(){try{purgeDeletedSessions();localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS));localStorage.setItem(DELETED_SESSION_STORAGE,JSON.stringify([...DELETED_SESSIONS]));localStorage.setItem(PLAYER_STORAGE,JSON.stringify(CUSTOM_PLAYERS))}catch{}}
+function saveAll(){try{purgeDeletedSessions();localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS));localStorage.setItem(DELETED_SESSION_STORAGE,JSON.stringify([...DELETED_SESSIONS]));localStorage.setItem(PLAYER_STORAGE,JSON.stringify(MANAGED_PLAYERS))}catch{}}
 function sessionIds(){return Object.keys(SESSIONS).sort((a,b)=>b.localeCompare(a))}
 function availableMonths(){return [...new Set(sessionIds().map(id=>SESSIONS[id]?.month).filter(Boolean))].sort((a,b)=>b.localeCompare(a))}
 function latestMonth(){return availableMonths()[0]||"2026-09"}
@@ -83,7 +93,9 @@ function refreshSessionSelectors(){
  const formSession=document.getElementById("form-session"),oldForm=formSession.value;
  formSession.innerHTML=ids.map(id=>`<option value="${esc(id)}">${esc(SESSIONS[id]?.label||id)}</option>`).join("");formSession.value=ids.includes(oldForm)?oldForm:(ids[0]||"");
 }
-function sortedPlayers(){return [...PLAYERS,...CUSTOM_PLAYERS].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}))}
+function sortedPlayers(){return [...MANAGED_PLAYERS].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}))}
+function activePlayers(){return sortedPlayers().filter(p=>p.active!==false)}
+function playerIsUsed(name){return RECORDS.some(r=>r.p===name||r.kills?.includes(name))||Object.values(SESSION_PARTICIPANTS).some(names=>Array.isArray(names)&&names.includes(name))}
 function participantNamesForSession(session){const saved=SESSION_PARTICIPANTS[session];return Array.isArray(saved)?saved:[]}
 function participantsForSession(session){const allowed=new Set(participantNamesForSession(session));return sortedPlayers().filter(p=>allowed.has(p.name))}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
@@ -220,7 +232,7 @@ function renderPlayer(){
  document.getElementById("p-games").innerHTML=rr.sort((a,b)=>a.g-b.g).map(r=>{const g=gameFor(r),killsText=r.role==="Imposteur"?(r.kills?.join(" → ")||"Aucun kill"):"—",sortie=r.ejected?"Éjecté":(r.role==="Crew"?(r.death||"Survit"):"Survit");return `<tr><td>${r.g}</td><td>${esc(g?.map||"—")}</td><td>${esc(r.role)}</td><td>${resultFor(r)}</td><td>${esc(g?.method||"—")}</td><td>${r.reports||0}</td><td>${r.self||0}</td><td>${r.sab||0}</td><td>${r.repair===null?"?":r.repair}</td><td>${esc(killsText)}</td><td>${esc(sortie)}</td><td>${r.role==="Crew"&&r.deathPos?`${r.deathPos}${r.deathPos===1?"er":"e"}`:"—"}</td><td>${r.turn?`T${r.turn}`:"—"}</td><td>${r.tasks===null?"—":`${r.tasks}/${r.totalTasks||9}`}</td><td>${esc(r.note||"")}</td></tr>`}).join("")
 }
 
-function playerOptions(blank=false,session=null){const list=session?participantsForSession(session):sortedPlayers();return (blank?`<option value="">— Choisir —</option>`:"")+list.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("")}
+function playerOptions(blank=false,session=null){const list=session?participantsForSession(session):activePlayers();return (blank?`<option value="">— Choisir —</option>`:"")+list.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("")}
 function currentEntrySession(){return document.getElementById("form-session").value}
 function syncEntryPlayerOptions(){const sel=document.getElementById("form-player"),old=sel.value;sel.innerHTML=playerOptions(false,currentEntrySession());if([...sel.options].some(o=>o.value===old))sel.value=old}
 function refreshEventPlayerOptions(){const session=currentEntrySession();document.querySelectorAll("#events-list .event-row").forEach(row=>{const type=row.querySelector(".ev-type")?.value,sel=row.querySelector(".ev-target");if(!sel)return;const old=sel.value;let html="";if(type==="kill"||type==="death")html=playerOptions(true,session);if(type==="report"||type==="self")html=`<option value="">Non renseigné</option>${playerOptions(false,session)}`;if(type==="eject")html=`<option>Personne</option>${playerOptions(false,session)}`;if(html){sel.innerHTML=html;if([...sel.options].some(o=>o.value===old))sel.value=old}})}
@@ -364,7 +376,7 @@ function renderAdminParticipants(){
  sessionSel.innerHTML=sessions.map(([id,s])=>`<option value="${esc(id)}">${esc(s.label||s.date||id)}</option>`).join("");
  if(sessions.some(([id])=>id===old))sessionSel.value=old;
  const selected=new Set(participantNamesForSession(sessionSel.value));
- list.innerHTML=sortedPlayers().map(p=>`<label class="participant-check"><input type="checkbox" value="${esc(p.name)}" ${selected.has(p.name)?"checked":""}><span>${esc(p.name)}</span></label>`).join("");
+ list.innerHTML=sortedPlayers().map(p=>{const inactive=p.active===false&&!selected.has(p.name);return `<label class="participant-check ${p.active===false?"inactive":""}"><input type="checkbox" value="${esc(p.name)}" ${selected.has(p.name)?"checked":""} ${inactive?"disabled":""}><span>${esc(p.name)}${p.active===false?" <small>(inactif)</small>":""}</span></label>`}).join("");
 }
 function clearAdminParticipants(){
  document.querySelectorAll("#admin-participants-list input[type=\"checkbox\"]").forEach(x=>x.checked=false);
@@ -379,49 +391,92 @@ function saveAdminParticipants(){
  if(currentEntrySession()===session){syncEntryPlayerOptions();refreshEventPlayerOptions()}
  status.textContent=`${names.length} participant${names.length>1?"s":""} enregistré${names.length>1?"s":""} pour cette soirée.`;
 }
+function resetAdminPlayerForm(){
+ const name=document.getElementById("admin-player-name"),handle=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),cancel=document.getElementById("admin-cancel-player-edit"),status=document.getElementById("admin-player-status");
+ if(!name)return;
+ name.value="";handle.value="";name.disabled=false;button.textContent="+ Ajouter le streamer";cancel.hidden=true;delete button.dataset.editName;
+ if(status)status.textContent="";
+}
 function renderAdminPlayers(){
  const list=document.getElementById("admin-players-list");
  const status=document.getElementById("admin-player-status");
  if(!list)return;
  const players=sortedPlayers();
  list.innerHTML=players.map(p=>{
-   const custom=CUSTOM_PLAYERS.some(x=>x.name===p.name&&x.handle===p.handle);
-   const used=RECORDS.some(r=>r.p===p.name)||Object.values(SESSION_PARTICIPANTS).some(names=>Array.isArray(names)&&names.includes(p.name));
-   return `<div class="admin-player-row">
-     <div><strong>${esc(p.name)}</strong><small>@${esc(p.handle)} • ${custom?"Ajouté dans Admin":"Streamer intégré"}</small></div>
-     <div class="admin-player-actions">${custom?`<button type="button" class="danger admin-player-delete" data-name="${esc(p.name)}" ${used?"disabled title=\"Ce streamer est déjà utilisé dans des données ou des participants.\"":""}>Supprimer</button>`:"<span class=\"muted\">Intégré</span>"}</div>
+   const used=playerIsUsed(p.name);
+   return `<div class="admin-player-row ${{p.active===false?"inactive":""}">
+     <div><strong>${{esc(p.name)}</strong><small>@${{esc(p.handle)} • ${{p.active===false?"Inactif":"Actif"}${{used?" • données utilisées":""}</small></div>
+     <div class="admin-player-actions">
+       <button type="button" class="secondary admin-player-edit" data-name="${{esc(p.name)}">Modifier</button>
+       <button type="button" class="${{p.active===false?"primary":"secondary"} admin-player-toggle" data-name="${{esc(p.name)}">${{p.active===false?"Réactiver":"Désactiver"}</button>
+       ${{used?"":`<button type="button" class="danger admin-player-delete" data-name="${{esc(p.name)}">Supprimer</button>`}
+     </div>
    </div>`;
  }).join("");
+ list.querySelectorAll(".admin-player-edit").forEach(btn=>btn.addEventListener("click",()=>editAdminPlayer(btn.dataset.name)));
+ list.querySelectorAll(".admin-player-toggle").forEach(btn=>btn.addEventListener("click",()=>toggleAdminPlayer(btn.dataset.name)));
  list.querySelectorAll(".admin-player-delete").forEach(btn=>btn.addEventListener("click",()=>deleteAdminPlayer(btn.dataset.name)));
  if(!players.length)list.innerHTML='<p class="muted">Aucun streamer enregistré.</p>';
  if(status&&!status.textContent)status.textContent="";
 }
+function editAdminPlayer(name){
+ const p=MANAGED_PLAYERS.find(x=>x.name===name),nameInput=document.getElementById("admin-player-name"),handleInput=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),cancel=document.getElementById("admin-cancel-player-edit"),status=document.getElementById("admin-player-status");
+ if(!p)return;
+ const used=playerIsUsed(p.name);
+ nameInput.value=p.name;handleInput.value=p.handle;nameInput.disabled=used;button.textContent="Enregistrer les modifications";button.dataset.editName=p.name;cancel.hidden=false;
+ status.textContent=used?"Ce streamer est déjà utilisé : son nom est verrouillé pour préserver les anciennes données.":"Modifie le nom ou le pseudo Twitch puis enregistre.";
+ nameInput.focus();
+}
 function addAdminPlayer(){
- const name=document.getElementById("admin-player-name").value.trim();
- const handle=document.getElementById("admin-player-handle").value.trim().replace(/^@+/,"");
- const status=document.getElementById("admin-player-status");
+ const nameInput=document.getElementById("admin-player-name"),handleInput=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),status=document.getElementById("admin-player-status");
+ const oldName=button.dataset.editName||"",name=nameInput.value.trim(),handle=handleInput.value.trim().replace(/^@+/,"");
  if(!name||!handle){status.textContent="Renseigne le nom affiché et le pseudo Twitch.";return}
- const exists=sortedPlayers().some(p=>p.name.toLowerCase()===name.toLowerCase()||p.handle.toLowerCase()===handle.toLowerCase());
+ const exists=MANAGED_PLAYERS.some(p=>{const same=p.name.toLowerCase()===oldName.toLowerCase();return !same&&(p.name.toLowerCase()===name.toLowerCase()||p.handle.toLowerCase()===handle.toLowerCase())});
  if(exists){status.textContent="Ce nom ou ce pseudo Twitch existe déjà.";return}
- CUSTOM_PLAYERS.push({name,handle});
+ if(oldName){
+   const p=MANAGED_PLAYERS.find(x=>x.name===oldName);
+   if(!p){resetAdminPlayerForm();return}
+   const used=playerIsUsed(oldName);
+   if(used&&name!==oldName){status.textContent="Impossible de renommer ce streamer car il est déjà utilisé dans des données.";return}
+   if(name!==oldName){
+     RECORDS.forEach(r=>{
+       if(r.p===oldName)r.p=name;
+       if(Array.isArray(r.kills))r.kills=r.kills.map(k=>k===oldName?name:k);
+       if(typeof r.death==="string")r.death=r.death.split(oldName).join(name);
+     });
+     Object.keys(SESSION_PARTICIPANTS).forEach(id=>{if(Array.isArray(SESSION_PARTICIPANTS[id]))SESSION_PARTICIPANTS[id]=SESSION_PARTICIPANTS[id].map(n=>n===oldName?name:n)});
+     if(currentPlayer===oldName)currentPlayer=name;
+   }
+   p.name=name;p.handle=handle;
+   saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+   resetAdminPlayerForm();
+   document.getElementById("admin-player-status").textContent=`${name} a été modifié.`;
+   return;
+ }
+ MANAGED_PLAYERS.push({name,handle,active:true});
  saveAll();
- document.getElementById("admin-player-name").value="";
- document.getElementById("admin-player-handle").value="";
  refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+ resetAdminPlayerForm();
  document.getElementById("admin-player-status").textContent=`${name} a été ajouté aux streamers.`;
+}
+function toggleAdminPlayer(name){
+ const p=MANAGED_PLAYERS.find(x=>x.name===name),status=document.getElementById("admin-player-status");
+ if(!p)return;
+ p.active=p.active===false;
+ saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+ status.textContent=p.active?`${name} est de nouveau actif.`:`${name} est maintenant inactif. Il reste visible dans l’historique.`;
 }
 function deleteAdminPlayer(name){
  const status=document.getElementById("admin-player-status");
- const used=RECORDS.some(r=>r.p===name)||Object.values(SESSION_PARTICIPANTS).some(names=>Array.isArray(names)&&names.includes(name));
- if(used){status.textContent="Impossible de supprimer ce streamer : il est déjà utilisé dans des données ou une liste de participants.";return}
+ if(playerIsUsed(name)){status.textContent="Impossible de supprimer ce streamer : il est déjà utilisé dans des données ou des participants. Désactive-le plutôt.";return}
  if(!confirm(`Supprimer ${name} de la liste des streamers ?`))return;
- CUSTOM_PLAYERS=CUSTOM_PLAYERS.filter(p=>p.name!==name);
+ MANAGED_PLAYERS=MANAGED_PLAYERS.filter(p=>p.name!==name);
  if(currentPlayer===name)currentPlayer=sortedPlayers()[0]?.name||"";
  saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
- document.getElementById("admin-player-status").textContent=`${name} a été supprimé.`;
+ status.textContent=`${name} a été supprimé.`;
 }
 function renderAdmin(){renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
-document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);
-document.getElementById("admin-reset").addEventListener("click",()=>{DELETED_SESSIONS.clear();SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));CUSTOM_PLAYERS=[];currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
+document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
+document.getElementById("admin-reset").addEventListener("click",()=>{DELETED_SESSIONS.clear();SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));MANAGED_PLAYERS=structuredClone(SEED_PLAYERS).map(p=>({...p,active:true}));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
 function renderAll(){renderStats();renderSessions();renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}
 refreshSessionSelectors();initEntry();renderAll();
