@@ -1901,3 +1901,35 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   text-align:center !important;
   line-height:1.08 !important;
 }
+/* ===== Hall of Fame : alignement final horizontal ===== */
+
+/* La séparation CSS suit maintenant la séparation réelle de l'image */
+.hall-rows .vrow{
+  grid-template-columns:minmax(0,1fr) 43% !important;
+  column-gap:1.2% !important;
+}
+
+/* Intitulé légèrement décalé vers la droite
+   + la stat peut aller jusqu'au bord droit de la cellule */
+.visual-hall .vrow > div{
+  padding-left:1.8% !important;
+  padding-right:0 !important;
+}
+
+/* Stat collée au bord droit de la cellule gauche */
+.visual-hall small{
+  justify-self:end !important;
+  text-align:right !important;
+  margin-right:0 !important;
+}
+
+/* Pseudos réellement centrés dans la cellule droite */
+.hall-rows .vrow > strong{
+  width:90% !important;
+  justify-self:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  padding:0 !important;
+  white-space:normal !important;
+  line-height:1.08 !important;
+}
