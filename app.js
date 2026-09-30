@@ -147,8 +147,9 @@ function renderStats(){
  document.getElementById("crew-methods").innerHTML=`<b>Quêtes</b> ${cr[0][1]} (${pct(cr[0][1],cw.length)}) • <b>Élimination</b> ${cr[1][1]} (${pct(cr[1][1],cw.length)})`;
 
  const tracked=sortedPlayers().map(p=>{const rr=recs.filter(r=>r.p===p.name),imp=rr.filter(r=>r.role==="Imposteur"),crew=rr.filter(r=>r.role==="Crew"),taskRows=crew.filter(r=>Number.isFinite(r.tasks)&&Number(r.totalTasks||9)>0),taskDone=taskRows.reduce((a,r)=>a+Number(r.tasks||0),0),taskTotal=taskRows.reduce((a,r)=>a+Number(r.totalTasks||9),0);return{name:p.name,rr,imp,crew,impWins:imp.filter(r=>resultFor(r)==="Victoire").length,crewWins:crew.filter(r=>resultFor(r)==="Victoire").length,impEjected:imp.filter(r=>r.ejected).length,crewEjected:crew.filter(r=>r.ejected).length,kills:rr.reduce((a,r)=>a+(r.kills?.length||0),0),maxKills:Math.max(0,...rr.map(r=>r.kills?.length||0)),t1:crew.filter(r=>r.turn===1).length,firstDeath:crew.filter(r=>r.deathPos===1).length,repairs:crew.reduce((a,r)=>a+(Number.isFinite(r.repair)?r.repair:0),0),taskGames:taskRows.length,taskDone,taskTotal,taskRate:taskTotal?taskDone/taskTotal:null}}).filter(x=>x.rr.length);
- if(!tracked.length){document.getElementById("hall").innerHTML="";document.getElementById("shame").innerHTML="";document.getElementById("t1-rows").innerHTML="";document.getElementById("mentions").innerHTML="";document.getElementById("t1-average").textContent="0 Crewmate";document.getElementById("task-best-name").textContent="Pas assez de données";document.getElementById("task-best-detail").textContent="Minimum 3 games Crew";document.getElementById("task-worst-name").textContent="Pas assez de données";document.getElementById("task-worst-detail").textContent="Minimum 3 games Crew";return}
+ if(!tracked.length){document.getElementById("hall").innerHTML="";document.getElementById("shame").innerHTML="";document.getElementById("t1-rows").innerHTML="";document.getElementById("mentions").innerHTML="";document.getElementById("t1-average").textContent="0 Crewmate";return}
  const impP=tracked.filter(x=>x.imp.length),crewP=tracked.filter(x=>x.crew.length),taskEligible=tracked.filter(x=>x.taskGames>=3&&x.taskRate!==null);
+ const bestTaskRate=taskEligible.length?Math.max(...taskEligible.map(x=>x.taskRate)):null,worstTaskRate=taskEligible.length?Math.min(...taskEligible.map(x=>x.taskRate)):null,bestTasks=taskEligible.filter(x=>x.taskRate===bestTaskRate),worstTasks=taskEligible.filter(x=>x.taskRate===worstTaskRate);
  const maxIR=Math.max(...impP.map(x=>x.impWins/x.imp.length)),iaot=impP.filter(x=>x.impWins/x.imp.length===maxIR),mostIW=[...impP].sort((a,b)=>b.impWins-a.impWins)[0];
  const maxCR=Math.max(...crewP.map(x=>x.crewWins/x.crew.length)),bestC=crewP.filter(x=>x.crewWins/x.crew.length===maxCR),mostIG=[...tracked].sort((a,b)=>b.imp.length-a.imp.length)[0];
  const maxCS=Math.max(...tracked.map(x=>x.crew.length/x.rr.length)),career=tracked.filter(x=>x.crew.length/x.rr.length===maxCS),never=impP.filter(x=>x.impEjected===0);
@@ -158,7 +159,8 @@ function renderStats(){
  vrow("Meilleur taux de victoire Crew",bestC.map(x=>x.name).join(", "),`${pct(maxCR,1)} • ${bestC.map(x=>`${x.crewWins}/${x.crew.length}`).join(" • ")}`,"medal"),
  vrow("Le plus de fois Imposteur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} • ${mostIG.imp.length}/${mostIG.rr.length} games`,"users"),
  vrow("Le Crewmate de carrière",career.map(x=>x.name).join(", "),`${pct(maxCS,1)} Crew • ${career[0].crew.length}/${career[0].rr.length} games`,"shield"),
- vrow("Imposteur jamais éjecté",never.map(x=>x.name).join(", "),never.map(x=>`0/${x.imp.length}`).join(" • "),"infinity")
+ vrow("Imposteur jamais éjecté",never.map(x=>x.name).join(", "),never.map(x=>`0/${x.imp.length}`).join(" • "),"infinity"),
+ vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?`${pct(bestTaskRate,1)} des quêtes • ${bestTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","bolt")
  ].join("");
 
  const zero=impP.filter(x=>x.impWins===0),sas=impP.filter(x=>x.impEjected===x.imp.length),maxER=Math.max(...impP.map(x=>x.impEjected/x.imp.length)),mostE=impP.filter(x=>x.impEjected/x.imp.length===maxER);
@@ -170,15 +172,9 @@ function renderStats(){
  vrow("Fantôme ultime",ghost.map(x=>x.name).join(", "),`Mort en T1 ${maxT1} fois`,"ghost"),
  vrow("Le départ express",express.map(x=>x.name).join(", "),`Mort en premier ${express[0].firstDeath} fois • ${pct(maxFR,1)}`,"fast"),
  vrow("Accusé idéal",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
- vrow("Soirée noire",noCW.length?noCW.map(x=>x.name).join(", "):"Personne",noCW.length?"0 victoire Crew":"Aucun joueur concerné","sad")
+ vrow("Soirée noire",noCW.length?noCW.map(x=>x.name).join(", "):"Personne",noCW.length?"0 victoire Crew":"Aucun joueur concerné","sad"),
+ vrow("Éternel vacancier",worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données",worstTasks.length?`${pct(worstTaskRate,1)} des quêtes • ${worstTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","sad")
  ].join("");
- const bestTaskRate=taskEligible.length?Math.max(...taskEligible.map(x=>x.taskRate)):null,worstTaskRate=taskEligible.length?Math.min(...taskEligible.map(x=>x.taskRate)):null,bestTasks=taskEligible.filter(x=>x.taskRate===bestTaskRate),worstTasks=taskEligible.filter(x=>x.taskRate===worstTaskRate);
- document.getElementById("task-best-label").textContent=all?"Employé modèle":"Employé du mois";
- document.getElementById("task-worst-label").textContent=all?"Éternel vacancier":"Slacker du mois";
- document.getElementById("task-best-name").textContent=bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données";
- document.getElementById("task-best-detail").textContent=bestTasks.length?`${pct(bestTaskRate,1)} des quêtes • ${bestTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew";
- document.getElementById("task-worst-name").textContent=worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données";
- document.getElementById("task-worst-detail").textContent=worstTasks.length?`${pct(worstTaskRate,1)} des quêtes • ${worstTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew";
 
  const avgT1=games.length?games.reduce((a,g)=>a+(g.t1Deaths||0),0)/games.length:0,maxDeaths=Math.max(0,...games.map(g=>g.t1Deaths||0)),maxTimes=games.filter(g=>(g.t1Deaths||0)===maxDeaths).length;
  document.getElementById("t1-average").textContent=`${avgT1.toFixed(2).replace(".",",")} Crewmate${avgT1>1?"s":""}`;
