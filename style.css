@@ -1618,3 +1618,11 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   outline-offset:4px;
   border-radius:4px;
 }
+
+
+.participant-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
