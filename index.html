@@ -166,13 +166,23 @@
       </div>
       <div class="two-cols entry-cols">
         <div class="subpanel">
-          <div class="subpanel-head"><div><h3>Événements</h3><p>Kills, mort du streamer, report, self-report, réparation, conseil… autant de lignes que nécessaire.</p></div><button id="add-event-btn" class="secondary" type="button">+ Ajouter</button></div>
+          <div class="subpanel-head"><div><h3>Événements</h3><p>Kills, mort du streamer, report, self-report, conseil… autant de lignes que nécessaire.</p></div><button id="add-event-btn" class="secondary" type="button">+ Ajouter</button></div>
           <div id="events-list" class="dynamic-list"></div>
         </div>
-        <div class="subpanel">
-          <div class="subpanel-head"><div><h3>Sabotages</h3><p><span id="sabotage-count">0 sabotage</span> enregistré dans cette game.</p></div><button id="add-sabotage-btn" class="secondary" type="button">+ Ajouter</button></div>
-          <div id="sabotages-list" class="dynamic-list"></div>
-          <label class="favorite-label">Sabotage le plus utilisé dans la game<select id="form-favorite-sabotage"></select></label>
+        <div class="entry-role-stack">
+          <div id="crew-repair-panel" class="subpanel role-panel">
+            <div class="subpanel-head"><div><h3>Réparations de sabotage</h3><p>Nombre total de sabotages réparés par le Crew dans cette game.</p></div></div>
+            <div class="repair-counter" aria-label="Nombre de réparations">
+              <button id="repair-minus" class="secondary" type="button" aria-label="Retirer une réparation">−</button>
+              <input id="form-repairs" type="number" min="0" value="0" readonly>
+              <button id="repair-plus" class="secondary" type="button" aria-label="Ajouter une réparation">+</button>
+            </div>
+          </div>
+          <div id="impostor-sabotage-panel" class="subpanel role-panel" hidden>
+            <div class="subpanel-head"><div><h3>Sabotages</h3><p><span id="sabotage-count">0 sabotage</span> enregistré dans cette game. Le favori est calculé automatiquement.</p></div><button id="add-sabotage-btn" class="secondary" type="button">+ Ajouter</button></div>
+            <div id="sabotages-list" class="dynamic-list"></div>
+            <div class="favorite-box favorite-auto"><span>Sabotage le plus utilisé</span><strong id="favorite-sabotage-preview">Aucun</strong></div>
+          </div>
         </div>
       </div>
       <div class="subpanel gap-top">
