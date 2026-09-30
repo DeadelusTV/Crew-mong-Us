@@ -1665,3 +1665,20 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
     justify-content:flex-start;
   }
 }
+
+
+/* ===== Admin : actions sur les fiches ===== */
+.admin-item-actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:flex-end;
+}
+@media(max-width:700px){
+  .admin-item{
+    grid-template-columns:1fr;
+  }
+  .admin-item-actions{
+    justify-content:flex-start;
+  }
+}
