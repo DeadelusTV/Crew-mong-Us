@@ -402,17 +402,22 @@ function renderAdminPlayers(){
  const status=document.getElementById("admin-player-status");
  if(!list)return;
  const players=sortedPlayers();
- list.innerHTML=players.map(p=>{
-   const used=playerIsUsed(p.name);
-   return `<div class="admin-player-row ${{p.active===false?"inactive":""}">
-     <div><strong>${{esc(p.name)}</strong><small>@${{esc(p.handle)} • ${{p.active===false?"Inactif":"Actif"}${{used?" • données utilisées":""}</small></div>
-     <div class="admin-player-actions">
-       <button type="button" class="secondary admin-player-edit" data-name="${{esc(p.name)}">Modifier</button>
-       <button type="button" class="${{p.active===false?"primary":"secondary"} admin-player-toggle" data-name="${{esc(p.name)}">${{p.active===false?"Réactiver":"Désactiver"}</button>
-       ${{used?"":`<button type="button" class="danger admin-player-delete" data-name="${{esc(p.name)}">Supprimer</button>`}
-     </div>
-   </div>`;
- }).join("");
+  list.innerHTML=players.map(p=>{
+    const used=playerIsUsed(p.name);
+    const state=p.active===false?"Inactif":"Actif";
+    const stateClass=p.active===false?"inactive":"";
+    const toggleLabel=p.active===false?"Réactiver":"Désactiver";
+    const toggleClass=p.active===false?"primary":"secondary";
+    const deleteButton=used?"":`<button type="button" class="danger admin-player-delete" data-name="${esc(p.name)}">Supprimer</button>`;
+    return `<div class="admin-player-row ${stateClass}">
+      <div><strong>${esc(p.name)}</strong><small>@${esc(p.handle)} • ${state}${used?" • données utilisées":""}</small></div>
+      <div class="admin-player-actions">
+        <button type="button" class="secondary admin-player-edit" data-name="${esc(p.name)}">Modifier</button>
+        <button type="button" class="${toggleClass} admin-player-toggle" data-name="${esc(p.name)}">${toggleLabel}</button>
+        ${deleteButton}
+      </div>
+    </div>`;
+  }).join("");
  list.querySelectorAll(".admin-player-edit").forEach(btn=>btn.addEventListener("click",()=>editAdminPlayer(btn.dataset.name)));
  list.querySelectorAll(".admin-player-toggle").forEach(btn=>btn.addEventListener("click",()=>toggleAdminPlayer(btn.dataset.name)));
  list.querySelectorAll(".admin-player-delete").forEach(btn=>btn.addEventListener("click",()=>deleteAdminPlayer(btn.dataset.name)));
