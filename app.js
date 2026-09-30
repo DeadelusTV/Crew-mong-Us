@@ -56,12 +56,13 @@ const RECORD_STORAGE="crewmongus-v6-records",GAME_STORAGE="crewmongus-v6-games",
 let DELETED_SESSIONS=new Set(loadJson(DELETED_SESSION_STORAGE,[]));
 let SESSIONS=loadJson(SESSION_STORAGE,SEED_SESSIONS);
 const DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));
-let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS),MANAGED_PLAYERS=loadManagedPlayers();
+let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS),PLAYERS=loadPlayers();
 purgeDeletedSessions();
 let currentScope=latestMonth(),currentPlayer="Bunny_Island",currentPlayerMonth=latestMonth(),currentPlayerMode="month",editingRecordKey=null;
 
+/* ===== Données et stockage ===== */
 function loadJson(key,seed){try{const v=localStorage.getItem(key);return v?JSON.parse(v):structuredClone(seed)}catch{return structuredClone(seed)}}
-function loadManagedPlayers(){
+function loadPlayers(){
  const saved=loadJson(PLAYER_STORAGE,[]);
  const source=Array.isArray(saved)&&saved.length?saved:SEED_PLAYERS;
  const map=new Map(SEED_PLAYERS.map(p=>[p.name.toLowerCase(),{...p,active:true}]));
@@ -76,7 +77,8 @@ function purgeDeletedSessions(){
  GAMES=GAMES.filter(g=>!DELETED_SESSIONS.has(g.session));
  RECORDS=RECORDS.filter(r=>!DELETED_SESSIONS.has(r.session));
 }
-function saveAll(){try{purgeDeletedSessions();localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS));localStorage.setItem(DELETED_SESSION_STORAGE,JSON.stringify([...DELETED_SESSIONS]));localStorage.setItem(PLAYER_STORAGE,JSON.stringify(MANAGED_PLAYERS))}catch{}}
+function saveAll(){try{purgeDeletedSessions();localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS));localStorage.setItem(DELETED_SESSION_STORAGE,JSON.stringify([...DELETED_SESSIONS]));localStorage.setItem(PLAYER_STORAGE,JSON.stringify(PLAYERS))}catch{}}
+/* ===== Helpers de sessions et joueurs ===== */
 function sessionIds(){return Object.keys(SESSIONS).sort((a,b)=>b.localeCompare(a))}
 function availableMonths(){return [...new Set(sessionIds().map(id=>SESSIONS[id]?.month).filter(Boolean))].sort((a,b)=>b.localeCompare(a))}
 function latestMonth(){return availableMonths()[0]||"2026-09"}
@@ -93,7 +95,7 @@ function refreshSessionSelectors(){
  const formSession=document.getElementById("form-session"),oldForm=formSession.value;
  formSession.innerHTML=ids.map(id=>`<option value="${esc(id)}">${esc(SESSIONS[id]?.label||id)}</option>`).join("");formSession.value=ids.includes(oldForm)?oldForm:(ids[0]||"");
 }
-function sortedPlayers(){return [...MANAGED_PLAYERS].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}))}
+function sortedPlayers(){return [...PLAYERS].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}))}
 function activePlayers(){return sortedPlayers().filter(p=>p.active!==false)}
 function playerIsUsed(name){return RECORDS.some(r=>r.p===name||r.kills?.includes(name))||Object.values(SESSION_PARTICIPANTS).some(names=>Array.isArray(names)&&names.includes(name))}
 function participantNamesForSession(session){const saved=SESSION_PARTICIPANTS[session];return Array.isArray(saved)?saved:[]}
@@ -144,6 +146,7 @@ document.getElementById("period-select").addEventListener("change",e=>{currentSc
 document.getElementById("session-month").addEventListener("change",renderSessions);
 document.getElementById("player-month-select").addEventListener("change",e=>{currentPlayerMonth=e.target.value;currentPlayerMode="month";renderPlayerTabs();renderPlayer()});
 
+/* ===== Rendu des pages ===== */
 function renderStats(){
  const games=gamesForScope(currentScope),recs=recordsForScope(currentScope),all=currentScope==="all";
  document.getElementById("scope-kicker").textContent=all?"STATS GLOBALES":"STATS DU MOIS";
@@ -218,6 +221,7 @@ function renderSessions(){
 function renderSession(id){const s=SESSIONS[id],games=GAMES.filter(g=>g.session===id).sort((a,b)=>a.n-b.n),iw=games.filter(g=>g.winner==="Imposteurs").length,cw=games.length-iw;document.getElementById("session-title").textContent=s.date;document.getElementById("session-summary").innerHTML=[["Games",games.length],["Wins Imposteurs",iw],["Wins Crew",cw],["Morts T1 / game",games.length?(games.reduce((a,g)=>a+(g.t1Deaths||0),0)/games.length).toFixed(2).replace(".",","):"0"],["Map la + jouée",mostCommon(games.map(g=>g.map))||"—"]].map(([a,b])=>`<div class="card"><span>${esc(a)}</span><strong>${esc(String(b))}</strong></div>`).join("");document.getElementById("session-games").innerHTML=games.map(g=>`<tr><td>${g.n}</td><td>${esc(g.map)}</td><td>${esc(g.winner)}</td><td>${esc(g.method)}</td><td>${g.t1Deaths||0}</td></tr>`).join("")}
 function mostCommon(arr){const c={};arr.forEach(v=>c[v]=(c[v]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]}
 
+/* ===== Fiche joueur ===== */
 function renderPlayerList(){const box=document.getElementById("player-list");box.innerHTML=sortedPlayers().map(p=>{const has=RECORDS.some(r=>r.p===p.name);return `<button class="player-btn ${p.name===currentPlayer?"active":""}" data-p="${esc(p.name)}">${esc(p.name)}<span>@${esc(p.handle)}${has?" • données":" • aucune grille"}</span></button>`}).join("");box.querySelectorAll(".player-btn").forEach(b=>b.addEventListener("click",()=>{currentPlayer=b.dataset.p;currentPlayerMonth=latestMonth();currentPlayerMode="month";renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}))}
 function syncPlayerMonth(){document.getElementById("player-month-select").value=currentPlayerMonth}
 function renderPlayerTabs(){const all=RECORDS.filter(r=>r.p===currentPlayer),ids=[...new Set(all.filter(r=>SESSIONS[r.session]?.month===currentPlayerMonth).map(r=>r.session))].sort((a,b)=>b.localeCompare(a)),box=document.getElementById("player-session-tabs");box.innerHTML=`<button class="tab ${currentPlayerMode==="month"?"active":""}" data-mode="month">Cumul du mois</button>`+ids.map(id=>`<button class="tab ${currentPlayerMode===id?"active":""}" data-mode="${id}">${esc(SESSIONS[id].label)}</button>`).join("")+`<button class="tab ${currentPlayerMode==="all"?"active":""}" data-mode="all">Cumul global</button>`;box.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{currentPlayerMode=b.dataset.mode;renderPlayerTabs();renderPlayer()}))}
@@ -241,6 +245,7 @@ function renderPlayer(){
  document.getElementById("p-games").innerHTML=rr.sort((a,b)=>a.g-b.g).map(r=>{const g=gameFor(r),killsText=r.role==="Imposteur"?(r.kills?.join(" → ")||"Aucun kill"):"—",sortie=r.ejected?"Éjecté":(r.role==="Crew"?(r.death||"Survit"):"Survit");return `<tr><td>${r.g}</td><td>${esc(g?.map||"—")}</td><td>${esc(r.role)}</td><td>${resultFor(r)}</td><td>${esc(g?.method||"—")}</td><td>${r.reports||0}</td><td>${r.self||0}</td><td>${r.sab||0}</td><td>${r.repair===null?"?":r.repair}</td><td>${esc(killsText)}</td><td>${esc(sortie)}</td><td>${r.role==="Crew"&&r.deathPos?`${r.deathPos}${r.deathPos===1?"er":"e"}`:"—"}</td><td>${r.turn?`T${r.turn}`:"—"}</td><td>${r.tasks===null?"—":`${r.tasks}/${r.totalTasks||9}`}</td><td>${esc(r.note||"")}</td></tr>`}).join("")
 }
 
+/* ===== Saisie d'une game ===== */
 function playerOptions(blank=false,session=null){const list=session?participantsForSession(session):activePlayers();return (blank?`<option value="">— Choisir —</option>`:"")+list.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("")}
 function currentEntrySession(){return document.getElementById("form-session").value}
 function syncEntryPlayerOptions(){const sel=document.getElementById("form-player"),old=sel.value;sel.innerHTML=playerOptions(false,currentEntrySession());if([...sel.options].some(o=>o.value===old))sel.value=old}
@@ -261,6 +266,7 @@ function syncWinnerFromResult(){const role=document.getElementById("form-role").
 document.getElementById("form-role").addEventListener("change",()=>{syncWinnerFromResult();syncEntryRolePanels()});document.getElementById("form-result").addEventListener("change",syncWinnerFromResult);document.getElementById("add-event-btn").addEventListener("click",addEventRow);document.getElementById("add-sabotage-btn").addEventListener("click",addSabotageRow);document.getElementById("repair-minus").addEventListener("click",()=>changeRepair(-1));document.getElementById("repair-plus").addEventListener("click",()=>changeRepair(1));document.getElementById("form-session").addEventListener("change",()=>{populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions()});
 document.getElementById("new-game-btn").addEventListener("click",()=>{editingRecordKey=null;document.getElementById("save-entry-btn").textContent="Enregistrer la fiche";const session=document.getElementById("form-session").value,nums=GAMES.filter(g=>g.session===session).map(g=>g.n),next=Math.max(0,...nums)+1,sel=document.getElementById("form-game");if(![...sel.options].some(o=>Number(o.value)===next))sel.insertAdjacentHTML("beforeend",`<option value="${next}">${next}</option>`);sel.value=String(next);document.getElementById("events-list").innerHTML="";document.getElementById("sabotages-list").innerHTML="";document.getElementById("form-repairs").value="0";addEventRow();updateSabotageCount();document.getElementById("entry-status").textContent=`Game ${next} prête à être saisie.`});
 
+/* ===== Administration ===== */
 function editRecordFromAdmin(index){
  const r=RECORDS[index];if(!r)return;
  const g=gameFor(r);editingRecordKey={session:r.session,p:r.p,g:r.g};
@@ -434,7 +440,7 @@ function renderAdminPlayers(){
  if(status&&!status.textContent)status.textContent="";
 }
 function editAdminPlayer(name){
- const p=MANAGED_PLAYERS.find(x=>x.name===name),nameInput=document.getElementById("admin-player-name"),handleInput=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),cancel=document.getElementById("admin-cancel-player-edit"),status=document.getElementById("admin-player-status");
+ const p=PLAYERS.find(x=>x.name===name),nameInput=document.getElementById("admin-player-name"),handleInput=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),cancel=document.getElementById("admin-cancel-player-edit"),status=document.getElementById("admin-player-status");
  if(!p)return;
  const used=playerIsUsed(p.name);
  nameInput.value=p.name;handleInput.value=p.handle;nameInput.disabled=used;button.textContent="Enregistrer les modifications";button.dataset.editName=p.name;cancel.hidden=false;
@@ -445,10 +451,10 @@ function addAdminPlayer(){
  const nameInput=document.getElementById("admin-player-name"),handleInput=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),status=document.getElementById("admin-player-status");
  const oldName=button.dataset.editName||"",name=nameInput.value.trim(),handle=handleInput.value.trim().replace(/^@+/,"");
  if(!name||!handle){status.textContent="Renseigne le nom affiché et le pseudo Twitch.";return}
- const exists=MANAGED_PLAYERS.some(p=>{const same=p.name.toLowerCase()===oldName.toLowerCase();return !same&&(p.name.toLowerCase()===name.toLowerCase()||p.handle.toLowerCase()===handle.toLowerCase())});
+ const exists=PLAYERS.some(p=>{const same=p.name.toLowerCase()===oldName.toLowerCase();return !same&&(p.name.toLowerCase()===name.toLowerCase()||p.handle.toLowerCase()===handle.toLowerCase())});
  if(exists){status.textContent="Ce nom ou ce pseudo Twitch existe déjà.";return}
  if(oldName){
-   const p=MANAGED_PLAYERS.find(x=>x.name===oldName);
+   const p=PLAYERS.find(x=>x.name===oldName);
    if(!p){resetAdminPlayerForm();return}
    const used=playerIsUsed(oldName);
    if(used&&name!==oldName){status.textContent="Impossible de renommer ce streamer car il est déjà utilisé dans des données.";return}
@@ -467,14 +473,14 @@ function addAdminPlayer(){
    document.getElementById("admin-player-status").textContent=`${name} a été modifié.`;
    return;
  }
- MANAGED_PLAYERS.push({name,handle,active:true});
+ PLAYERS.push({name,handle,active:true});
  saveAll();
  refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
  resetAdminPlayerForm();
  document.getElementById("admin-player-status").textContent=`${name} a été ajouté aux streamers.`;
 }
 function toggleAdminPlayer(name){
- const p=MANAGED_PLAYERS.find(x=>x.name===name),status=document.getElementById("admin-player-status");
+ const p=PLAYERS.find(x=>x.name===name),status=document.getElementById("admin-player-status");
  if(!p)return;
  p.active=p.active===false;
  saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
@@ -482,7 +488,7 @@ function toggleAdminPlayer(name){
 }
 function deleteAdminPlayer(name){
  const status=document.getElementById("admin-player-status");
- const p=MANAGED_PLAYERS.find(x=>x.name===name);
+ const p=PLAYERS.find(x=>x.name===name);
  if(!p)return;
  const used=playerIsUsed(name);
  const warning=used
@@ -490,7 +496,7 @@ function deleteAdminPlayer(name){
    : `\\n\\nSupprimer ${name} de la liste des streamers ?`;
  if(!confirm(warning))return;
 
- // Remove the player own records.
+ // Remove the player's own records.
  RECORDS=RECORDS.filter(r=>r.p!==name);
 
  // Remove the player from kills, death descriptions and notes of remaining records.
@@ -510,7 +516,7 @@ function deleteAdminPlayer(name){
    game.t1Deaths=RECORDS.filter(r=>r.session===game.session&&r.g===game.n&&r.role==="Crew"&&r.turn===1).length;
  });
 
- MANAGED_PLAYERS=MANAGED_PLAYERS.filter(x=>x.name!==name);
+ PLAYERS=PLAYERS.filter(x=>x.name!==name);
  if(currentPlayer===name)currentPlayer=sortedPlayers()[0]?.name||"";
  saveAll();
  refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
@@ -520,6 +526,7 @@ function deleteAdminPlayer(name){
 }
 function renderAdmin(){renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
-document.getElementById("admin-reset").addEventListener("click",()=>{DELETED_SESSIONS.clear();SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));MANAGED_PLAYERS=structuredClone(SEED_PLAYERS).map(p=>({...p,active:true}));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
+document.getElementById("admin-reset").addEventListener("click",()=>{DELETED_SESSIONS.clear();SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));PLAYERS=structuredClone(SEED_PLAYERS).map(p=>({...p,active:true}));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
+/* ===== Initialisation et rendu global ===== */
 function renderAll(){renderStats();renderSessions();renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}
 refreshSessionSelectors();initEntry();renderAll();
