@@ -222,7 +222,16 @@ function renderPlayerList(){const box=document.getElementById("player-list");box
 function syncPlayerMonth(){document.getElementById("player-month-select").value=currentPlayerMonth}
 function renderPlayerTabs(){const all=RECORDS.filter(r=>r.p===currentPlayer),ids=[...new Set(all.filter(r=>SESSIONS[r.session]?.month===currentPlayerMonth).map(r=>r.session))].sort((a,b)=>b.localeCompare(a)),box=document.getElementById("player-session-tabs");box.innerHTML=`<button class="tab ${currentPlayerMode==="month"?"active":""}" data-mode="month">Cumul du mois</button>`+ids.map(id=>`<button class="tab ${currentPlayerMode===id?"active":""}" data-mode="${id}">${esc(SESSIONS[id].label)}</button>`).join("")+`<button class="tab ${currentPlayerMode==="all"?"active":""}" data-mode="all">Cumul global</button>`;box.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{currentPlayerMode=b.dataset.mode;renderPlayerTabs();renderPlayer()}))}
 function renderPlayer(){
- const p=sortedPlayers().find(x=>x.name===currentPlayer),all=RECORDS.filter(r=>r.p===currentPlayer);let rr=currentPlayerMode==="all"?all:currentPlayerMode==="month"?all.filter(r=>SESSIONS[r.session]?.month===currentPlayerMonth):all.filter(r=>r.session===currentPlayerMode);
+ const p=sortedPlayers().find(x=>x.name===currentPlayer);
+ if(!p){
+  document.getElementById("p-name").textContent="Aucun streamer";
+  const twitchLink=document.getElementById("p-handle");twitchLink.textContent="";twitchLink.removeAttribute("href");
+  document.getElementById("p-state").textContent="Aucun streamer enregistré";
+  document.getElementById("p-summary").innerHTML=`<div class="card"><span>Statut</span><strong>Aucune donnée</strong></div>`;
+  document.getElementById("p-stats").innerHTML="";document.getElementById("p-maps").innerHTML="";document.getElementById("p-sabotage").innerHTML="";document.getElementById("p-games").innerHTML="";
+  return;
+ }
+ const all=RECORDS.filter(r=>r.p===currentPlayer);let rr=currentPlayerMode==="all"?all:currentPlayerMode==="month"?all.filter(r=>SESSIONS[r.session]?.month===currentPlayerMonth):all.filter(r=>r.session===currentPlayerMode);
  document.getElementById("p-name").textContent=p.name;const twitchLink=document.getElementById("p-handle");twitchLink.textContent="@"+p.handle+" ↗";twitchLink.href="https://www.twitch.tv/"+encodeURIComponent(p.handle);twitchLink.setAttribute("aria-label","Ouvrir la chaîne Twitch de "+p.name);document.getElementById("p-state").textContent=all.length?"Données présentes":"Aucune grille détaillée";
  if(!all.length){document.getElementById("p-summary").innerHTML=`<div class="card"><span>Statut</span><strong>Pas de données</strong></div>`;document.getElementById("p-stats").innerHTML=`<div class="kv-item"><span>Info</span><strong>Aucune grille fournie dans cette démo.</strong></div>`;document.getElementById("p-maps").innerHTML="";document.getElementById("p-sabotage").innerHTML="";document.getElementById("p-games").innerHTML="";return}
  const wins=rr.filter(r=>resultFor(r)==="Victoire").length,imp=rr.filter(r=>r.role==="Imposteur"),crew=rr.filter(r=>r.role==="Crew"),kills=rr.reduce((a,r)=>a+(r.kills?.length||0),0),reports=rr.reduce((a,r)=>a+(r.reports||0),0),repairs=crew.reduce((a,r)=>a+(Number.isFinite(r.repair)?r.repair:0),0),fav=favoriteSabotage(imp);
@@ -408,7 +417,7 @@ function renderAdminPlayers(){
     const stateClass=p.active===false?"inactive":"";
     const toggleLabel=p.active===false?"Réactiver":"Désactiver";
     const toggleClass=p.active===false?"primary":"secondary";
-    const deleteButton=used?"":`<button type="button" class="danger admin-player-delete" data-name="${esc(p.name)}">Supprimer</button>`;
+    const deleteButton=`<button type="button" class="danger admin-player-delete" data-name="${esc(p.name)}">Supprimer</button>`;
     return `<div class="admin-player-row ${stateClass}">
       <div><strong>${esc(p.name)}</strong><small>@${esc(p.handle)} • ${state}${used?" • données utilisées":""}</small></div>
       <div class="admin-player-actions">
@@ -473,12 +482,41 @@ function toggleAdminPlayer(name){
 }
 function deleteAdminPlayer(name){
  const status=document.getElementById("admin-player-status");
- if(playerIsUsed(name)){status.textContent="Impossible de supprimer ce streamer : il est déjà utilisé dans des données ou des participants. Désactive-le plutôt.";return}
- if(!confirm(`Supprimer ${name} de la liste des streamers ?`))return;
- MANAGED_PLAYERS=MANAGED_PLAYERS.filter(p=>p.name!==name);
+ const p=MANAGED_PLAYERS.find(x=>x.name===name);
+ if(!p)return;
+ const used=playerIsUsed(name);
+ const warning=used
+   ? `\\n\\nCette suppression retirera aussi ${name} de ses anciennes statistiques, parties et listes de participants. Les autres joueurs conserveront leurs données, mais les références à ${name} seront supprimées.\\n\\nCette action est irréversible. Continuer ?`
+   : `\\n\\nSupprimer ${name} de la liste des streamers ?`;
+ if(!confirm(warning))return;
+
+ // Remove the player own records.
+ RECORDS=RECORDS.filter(r=>r.p!==name);
+
+ // Remove the player from kills, death descriptions and notes of remaining records.
+ RECORDS.forEach(r=>{
+   if(Array.isArray(r.kills))r.kills=r.kills.filter(k=>k!==name);
+   if(typeof r.death==="string"&&r.death.includes(name))r.death=r.death.replaceAll(name,"un joueur supprimé");
+   if(typeof r.note==="string"&&r.note.includes(name))r.note=r.note.replaceAll(name,"un joueur supprimé");
+ });
+
+ // Remove the player from all saved session participant lists.
+ Object.keys(SESSION_PARTICIPANTS).forEach(id=>{
+   if(Array.isArray(SESSION_PARTICIPANTS[id]))SESSION_PARTICIPANTS[id]=SESSION_PARTICIPANTS[id].filter(n=>n!==name);
+ });
+
+ // Recalculate T1 deaths after removing the player records.
+ GAMES.forEach(game=>{
+   game.t1Deaths=RECORDS.filter(r=>r.session===game.session&&r.g===game.n&&r.role==="Crew"&&r.turn===1).length;
+ });
+
+ MANAGED_PLAYERS=MANAGED_PLAYERS.filter(x=>x.name!==name);
  if(currentPlayer===name)currentPlayer=sortedPlayers()[0]?.name||"";
- saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
- status.textContent=`${name} a été supprimé.`;
+ saveAll();
+ refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+ status.textContent=used
+   ? `${name} et ses données historiques ont été supprimés.`
+   : `${name} a été supprimé.`;
 }
 function renderAdmin(){renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
