@@ -160,7 +160,7 @@ function renderStats(){
  vrow("Abonné au côté obscur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} en Imposteur • ${mostIG.imp.length}/${mostIG.rr.length} games`,"users"),
  vrow("Le Crewmate de carrière",career.map(x=>x.name).join(", "),`${pct(maxCS,1)} Crew • ${career[0].crew.length}/${career[0].rr.length} games`,"shield"),
  vrow("Sous les radars",never.map(x=>x.name).join(", "),never.map(x=>`0 éjection sur ${x.imp.length} Imposteur`).join(" • "),"infinity"),
- vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?`${pct(bestTaskRate,1)} des quêtes complétées • ${bestTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","bolt")
+ vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?bestTasks.map(x=>`${x.taskDone} quêtes`).join(" • "):"Minimum 3 games Crew","bolt")
  ].join("");
 
  const zero=impP.filter(x=>x.impWins===0),maxE=Math.max(...impP.map(x=>x.impEjected)),sas=impP.filter(x=>x.impEjected===maxE),maxER=Math.max(...impP.map(x=>x.impEjected/x.imp.length)),mostE=impP.filter(x=>x.impEjected/x.imp.length===maxER);
@@ -173,7 +173,7 @@ function renderStats(){
  vrow("Le départ express",express.map(x=>x.name).join(", "),`Mort en premier ${express[0].firstDeath} fois • ${pct(maxFR,1)}`,"fast"),
  vrow("Accusé idéal",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
  vrow("Soirée noire",noCW.length?noCW.map(x=>x.name).join(", "):"Personne",noCW.length?"0 victoire Crew":"Aucun joueur concerné","sad"),
- vrow("Éternel vacancier",worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données",worstTasks.length?`${pct(worstTaskRate,1)} des quêtes complétées • ${worstTasks.map(x=>`${x.taskDone}/${x.taskTotal}`).join(" • ")}`:"Minimum 3 games Crew","sad")
+ vrow("Éternel vacancier",worstTasks.length?worstTasks.map(x=>x.name).join(", "):"Pas assez de données",worstTasks.length?worstTasks.map(x=>`${x.taskDone} quêtes`).join(" • "):"Minimum 3 games Crew","sad")
  ].join("");
 
  const avgT1=games.length?games.reduce((a,g)=>a+(g.t1Deaths||0),0)/games.length:0,maxDeaths=Math.max(0,...games.map(g=>g.t1Deaths||0)),maxTimes=games.filter(g=>(g.t1Deaths||0)===maxDeaths).length;
