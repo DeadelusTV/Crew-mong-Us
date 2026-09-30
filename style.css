@@ -1581,3 +1581,17 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .participant-check span{
   font-weight:700;
 }
+
+
+/* ===== Admin : création de session ===== */
+.admin-session-create{
+  margin-bottom:18px;
+}
+.admin-session-date{
+  display:block;
+  max-width:280px;
+  margin-top:14px;
+}
+.admin-session-date input{
+  width:100%;
+}
