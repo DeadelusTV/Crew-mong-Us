@@ -1727,10 +1727,10 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .hall-rows .vrow:nth-child(1){top:27.0% !important}
 .hall-rows .vrow:nth-child(2){top:36.2% !important}
 .hall-rows .vrow:nth-child(3){top:45.4% !important}
-.hall-rows .vrow:nth-child(4){top:54.6% !important}
-.hall-rows .vrow:nth-child(5){top:63.8% !important}
-.hall-rows .vrow:nth-child(6){top:73.0% !important}
-.hall-rows .vrow:nth-child(7){top:82.2% !important}
+.hall-rows .vrow:nth-child(4){top:54.4% !important}
+.hall-rows .vrow:nth-child(5){top:63.3% !important}
+.hall-rows .vrow:nth-child(6){top:72.2% !important}
+.hall-rows .vrow:nth-child(7){top:81.1% !important}
 
 .visual-hall .vrow .ico{
   display:none !important;
