@@ -3,7 +3,7 @@ const PLAYERS=[
 {name:"Pwatrinn",handle:"pwatrinn"},{name:"RC_Imperator",handle:"rc_imperator"},{name:"Bunny_Island",handle:"_bunny_island_"},
 {name:"AnsyTV",handle:"ansytv"},{name:"MiguelAngelo_TV",handle:"_miguelangelo"},{name:"Psyster",handle:"psyster"},{name:"Jerlapive",handle:"jerlapive"}
 ];
-const SESSIONS={"2026-09-28":{date:"28 septembre 2026",month:"2026-09",label:"28/09/2026"}};
+const SEED_SESSIONS={"2026-09-28":{date:"28 septembre 2026",month:"2026-09",label:"28/09/2026"}};
 const SEED_GAMES=[
 {session:"2026-09-28",n:1,map:"The Fungle",winner:"Imposteurs",method:"Kills",t1Deaths:3},
 {session:"2026-09-28",n:2,map:"Polus",winner:"Imposteurs",method:"Kills",t1Deaths:1},
@@ -52,13 +52,30 @@ const SEED_RECORDS=[
 {session:"2026-09-28",p:"AnsyTV",g:8,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:null,death:"Tuée par MrClegane",deathPos:6,turn:3,tasks:7,totalTasks:9,ejected:false,note:"Réparations non renseignées"}
 ];
 const SABOTAGE_TYPES=["Oxygène","Réacteur","Lumières","Radio","Sismiques","Portes","Champignon"];
-const RECORD_STORAGE="crewmongus-v6-records",GAME_STORAGE="crewmongus-v6-games",PARTICIPANT_STORAGE="crewmongus-v6-session-participants";
+const RECORD_STORAGE="crewmongus-v6-records",GAME_STORAGE="crewmongus-v6-games",PARTICIPANT_STORAGE="crewmongus-v6-session-participants",SESSION_STORAGE="crewmongus-v6-sessions";
+let SESSIONS=loadJson(SESSION_STORAGE,SEED_SESSIONS);
 const DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,PLAYERS.map(p=>p.name)]));
 let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS);
-let currentScope="2026-09",currentPlayer="Bunny_Island",currentPlayerMonth="2026-09",currentPlayerMode="month";
+let currentScope=latestMonth(),currentPlayer="Bunny_Island",currentPlayerMonth=latestMonth(),currentPlayerMode="month";
 
 function loadJson(key,seed){try{const v=localStorage.getItem(key);return v?JSON.parse(v):structuredClone(seed)}catch{return structuredClone(seed)}}
-function saveAll(){try{localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS))}catch{}}
+function saveAll(){try{localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS))}catch{}}
+function sessionIds(){return Object.keys(SESSIONS).sort((a,b)=>b.localeCompare(a))}
+function availableMonths(){return [...new Set(sessionIds().map(id=>SESSIONS[id]?.month).filter(Boolean))].sort((a,b)=>b.localeCompare(a))}
+function latestMonth(){return availableMonths()[0]||"2026-09"}
+function monthLabel(ym){const [y,m]=String(ym).split("-").map(Number);if(!y||!m)return ym;return new Intl.DateTimeFormat("fr-FR",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(y,m-1,1))).replace(/^./,c=>c.toUpperCase())}
+function sessionMetaFromId(id){const [y,m,d]=id.split("-").map(Number),date=new Date(Date.UTC(y,m-1,d));return{date:new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(date),month:id.slice(0,7),label:String(d).padStart(2,"0")+"/"+String(m).padStart(2,"0")+"/"+y}}
+function refreshSessionSelectors(){
+ const months=availableMonths(),ids=sessionIds();
+ const period=document.getElementById("period-select"),periodValue=currentScope==="all"?"all":(months.includes(currentScope)?currentScope:(months[0]||"all"));
+ period.innerHTML=months.map(m=>`<option value="${esc(m)}">${esc(monthLabel(m))}</option>`).join("")+`<option value="all">Stats globales</option>`;period.value=periodValue;currentScope=periodValue;
+ const sessionMonth=document.getElementById("session-month"),oldSessionMonth=sessionMonth.value;
+ sessionMonth.innerHTML=months.map(m=>`<option value="${esc(m)}">${esc(monthLabel(m))}</option>`).join("");sessionMonth.value=months.includes(oldSessionMonth)?oldSessionMonth:(months[0]||"");
+ const playerMonth=document.getElementById("player-month-select"),wantedPlayerMonth=months.includes(currentPlayerMonth)?currentPlayerMonth:(months[0]||"");
+ playerMonth.innerHTML=months.map(m=>`<option value="${esc(m)}">${esc(monthLabel(m))}</option>`).join("");playerMonth.value=wantedPlayerMonth;currentPlayerMonth=wantedPlayerMonth;
+ const formSession=document.getElementById("form-session"),oldForm=formSession.value;
+ formSession.innerHTML=ids.map(id=>`<option value="${esc(id)}">${esc(SESSIONS[id]?.label||id)}</option>`).join("");formSession.value=ids.includes(oldForm)?oldForm:(ids[0]||"");
+}
 function sortedPlayers(){return [...PLAYERS].sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}))}
 function participantNamesForSession(session){const saved=SESSION_PARTICIPANTS[session];return Array.isArray(saved)?saved:PLAYERS.map(p=>p.name)}
 function participantsForSession(session){const allowed=new Set(participantNamesForSession(session));return sortedPlayers().filter(p=>allowed.has(p.name))}
@@ -111,7 +128,7 @@ document.getElementById("player-month-select").addEventListener("change",e=>{cur
 function renderStats(){
  const games=gamesForScope(currentScope),recs=recordsForScope(currentScope),all=currentScope==="all";
  document.getElementById("scope-kicker").textContent=all?"STATS GLOBALES":"STATS DU MOIS";
- document.getElementById("scope-title").textContent=all?"Toutes périodes":"Septembre 2026";
+ document.getElementById("scope-title").textContent=all?"Toutes périodes":monthLabel(currentScope);
  document.getElementById("scope-subtitle").textContent=all?"Toutes les sessions enregistrées.":"Toutes les sessions enregistrées pendant le mois.";
  const iw=games.filter(g=>g.winner==="Imposteurs"),cw=games.filter(g=>g.winner==="Crewmates");
  document.getElementById("impo-win-count").textContent=iw.length;document.getElementById("impo-win-pct").textContent=pct(iw.length,games.length);
@@ -123,7 +140,7 @@ function renderStats(){
  document.getElementById("crew-methods").innerHTML=`<b>Quêtes</b> ${cr[0][1]} (${pct(cr[0][1],cw.length)}) • <b>Élimination</b> ${cr[1][1]} (${pct(cr[1][1],cw.length)})`;
 
  const tracked=sortedPlayers().map(p=>{const rr=recs.filter(r=>r.p===p.name),imp=rr.filter(r=>r.role==="Imposteur"),crew=rr.filter(r=>r.role==="Crew");return{name:p.name,rr,imp,crew,impWins:imp.filter(r=>resultFor(r)==="Victoire").length,crewWins:crew.filter(r=>resultFor(r)==="Victoire").length,impEjected:imp.filter(r=>r.ejected).length,crewEjected:crew.filter(r=>r.ejected).length,kills:rr.reduce((a,r)=>a+(r.kills?.length||0),0),maxKills:Math.max(0,...rr.map(r=>r.kills?.length||0)),t1:crew.filter(r=>r.turn===1).length,firstDeath:crew.filter(r=>r.deathPos===1).length,repairs:crew.reduce((a,r)=>a+(Number.isFinite(r.repair)?r.repair:0),0)}}).filter(x=>x.rr.length);
- if(!tracked.length){document.getElementById("hall").innerHTML="";document.getElementById("shame").innerHTML="";document.getElementById("t1-rows").innerHTML="";document.getElementById("mentions").innerHTML="";return}
+ if(!tracked.length){document.getElementById("hall").innerHTML="";document.getElementById("shame").innerHTML="";document.getElementById("t1-rows").innerHTML="";document.getElementById("mentions").innerHTML="";document.getElementById("t1-average").textContent="0 Crewmate";return}
  const impP=tracked.filter(x=>x.imp.length),crewP=tracked.filter(x=>x.crew.length);
  const maxIR=Math.max(...impP.map(x=>x.impWins/x.imp.length)),iaot=impP.filter(x=>x.impWins/x.imp.length===maxIR),mostIW=[...impP].sort((a,b)=>b.impWins-a.impWins)[0];
  const maxCR=Math.max(...crewP.map(x=>x.crewWins/x.crew.length)),bestC=crewP.filter(x=>x.crewWins/x.crew.length===maxCR),mostIG=[...tracked].sort((a,b)=>b.imp.length-a.imp.length)[0];
@@ -172,16 +189,16 @@ function renderStats(){
 }
 
 function renderSessions(){
- const month=document.getElementById("session-month").value,cards=document.getElementById("session-cards"),entries=Object.entries(SESSIONS).filter(([,s])=>s.month===month);
+ const month=document.getElementById("session-month").value,cards=document.getElementById("session-cards"),entries=Object.entries(SESSIONS).filter(([,s])=>s.month===month).sort((a,b)=>b[0].localeCompare(a[0]));
  cards.innerHTML=entries.map(([id,s],i)=>`<button class="session-card ${i===0?"active":""}" data-id="${id}"><h3>${esc(s.date)}</h3><p>${GAMES.filter(g=>g.session===id).length} games enregistrées</p></button>`).join("");
  cards.querySelectorAll(".session-card").forEach(b=>b.addEventListener("click",()=>{cards.querySelectorAll(".session-card").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderSession(b.dataset.id)}));if(entries.length)renderSession(entries[0][0]);
 }
 function renderSession(id){const s=SESSIONS[id],games=GAMES.filter(g=>g.session===id).sort((a,b)=>a.n-b.n),iw=games.filter(g=>g.winner==="Imposteurs").length,cw=games.length-iw;document.getElementById("session-title").textContent=s.date;document.getElementById("session-summary").innerHTML=[["Games",games.length],["Wins Imposteurs",iw],["Wins Crew",cw],["Morts T1 / game",games.length?(games.reduce((a,g)=>a+(g.t1Deaths||0),0)/games.length).toFixed(2).replace(".",","):"0"],["Map la + jouée",mostCommon(games.map(g=>g.map))||"—"]].map(([a,b])=>`<div class="card"><span>${esc(a)}</span><strong>${esc(String(b))}</strong></div>`).join("");document.getElementById("session-games").innerHTML=games.map(g=>`<tr><td>${g.n}</td><td>${esc(g.map)}</td><td>${esc(g.winner)}</td><td>${esc(g.method)}</td><td>${g.t1Deaths||0}</td></tr>`).join("")}
 function mostCommon(arr){const c={};arr.forEach(v=>c[v]=(c[v]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]}
 
-function renderPlayerList(){const box=document.getElementById("player-list");box.innerHTML=sortedPlayers().map(p=>{const has=RECORDS.some(r=>r.p===p.name);return `<button class="player-btn ${p.name===currentPlayer?"active":""}" data-p="${esc(p.name)}">${esc(p.name)}<span>@${esc(p.handle)}${has?" • données":" • aucune grille"}</span></button>`}).join("");box.querySelectorAll(".player-btn").forEach(b=>b.addEventListener("click",()=>{currentPlayer=b.dataset.p;currentPlayerMonth="2026-09";currentPlayerMode="month";renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}))}
+function renderPlayerList(){const box=document.getElementById("player-list");box.innerHTML=sortedPlayers().map(p=>{const has=RECORDS.some(r=>r.p===p.name);return `<button class="player-btn ${p.name===currentPlayer?"active":""}" data-p="${esc(p.name)}">${esc(p.name)}<span>@${esc(p.handle)}${has?" • données":" • aucune grille"}</span></button>`}).join("");box.querySelectorAll(".player-btn").forEach(b=>b.addEventListener("click",()=>{currentPlayer=b.dataset.p;currentPlayerMonth=latestMonth();currentPlayerMode="month";renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}))}
 function syncPlayerMonth(){document.getElementById("player-month-select").value=currentPlayerMonth}
-function renderPlayerTabs(){const all=RECORDS.filter(r=>r.p===currentPlayer),ids=[...new Set(all.filter(r=>SESSIONS[r.session]?.month===currentPlayerMonth).map(r=>r.session))].sort(),box=document.getElementById("player-session-tabs");box.innerHTML=`<button class="tab ${currentPlayerMode==="month"?"active":""}" data-mode="month">Cumul du mois</button>`+ids.map(id=>`<button class="tab ${currentPlayerMode===id?"active":""}" data-mode="${id}">${esc(SESSIONS[id].label)}</button>`).join("")+`<button class="tab ${currentPlayerMode==="all"?"active":""}" data-mode="all">Cumul global</button>`;box.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{currentPlayerMode=b.dataset.mode;renderPlayerTabs();renderPlayer()}))}
+function renderPlayerTabs(){const all=RECORDS.filter(r=>r.p===currentPlayer),ids=[...new Set(all.filter(r=>SESSIONS[r.session]?.month===currentPlayerMonth).map(r=>r.session))].sort((a,b)=>b.localeCompare(a)),box=document.getElementById("player-session-tabs");box.innerHTML=`<button class="tab ${currentPlayerMode==="month"?"active":""}" data-mode="month">Cumul du mois</button>`+ids.map(id=>`<button class="tab ${currentPlayerMode===id?"active":""}" data-mode="${id}">${esc(SESSIONS[id].label)}</button>`).join("")+`<button class="tab ${currentPlayerMode==="all"?"active":""}" data-mode="all">Cumul global</button>`;box.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{currentPlayerMode=b.dataset.mode;renderPlayerTabs();renderPlayer()}))}
 function renderPlayer(){
  const p=PLAYERS.find(x=>x.name===currentPlayer),all=RECORDS.filter(r=>r.p===currentPlayer);let rr=currentPlayerMode==="all"?all:currentPlayerMode==="month"?all.filter(r=>SESSIONS[r.session]?.month===currentPlayerMonth):all.filter(r=>r.session===currentPlayerMode);
  document.getElementById("p-name").textContent=p.name;document.getElementById("p-handle").textContent="@"+p.handle;document.getElementById("p-state").textContent=all.length?"Données présentes":"Aucune grille détaillée";
@@ -190,7 +207,7 @@ function renderPlayer(){
  document.getElementById("p-summary").innerHTML=[["Games",rr.length],["Victoires",wins],["Kills",kills],["Reports",reports],["Réparations",repairs]].map(([a,b])=>`<div class="card"><span>${a}</span><strong>${b}</strong></div>`).join("");
  document.getElementById("p-stats").innerHTML=[["Winrate global",pct(wins,rr.length)],["Winrate Crew",pct(crew.filter(r=>resultFor(r)==="Victoire").length,crew.length)],["Winrate Imposteur",pct(imp.filter(r=>resultFor(r)==="Victoire").length,imp.length)],["Part Crew",pct(crew.length,rr.length)],["Morts T1",crew.filter(r=>r.turn===1).length],["Éjections Crew",crew.filter(r=>r.ejected).length],["Éjections Imposteur",imp.filter(r=>r.ejected).length],["Sabotages",rr.reduce((a,r)=>a+(r.sab||0),0)]].map(([a,b])=>`<div class="kv-item"><span>${esc(a)}</span><strong>${esc(String(b))}</strong></div>`).join("");
  const maps={};rr.forEach(r=>{const g=gameFor(r);if(g)maps[g.map]=(maps[g.map]||0)+1});document.getElementById("p-maps").innerHTML=Object.entries(maps).map(([m,n])=>`<div class="map-row"><span>${esc(m)}</span><strong>${n}</strong></div>`).join("");document.getElementById("p-sabotage").innerHTML=`<span>Sabotage préféré</span><strong>${esc(fav?fav.name:(imp.some(r=>(r.sab||0)>0)?"Non renseigné":"Aucun"))}</strong>`;
- document.getElementById("p-games").innerHTML=rr.sort((a,b)=>a.g-b.g).map(r=>{const g=gameFor(r),kd=r.role==="Imposteur"?(r.kills?.join(" → ")||"Aucun kill"):r.death;return `<tr><td>${r.g}</td><td>${esc(g?.map||"—")}</td><td>${esc(r.role)}</td><td>${resultFor(r)}</td><td>${esc(g?.method||"—")}</td><td>${r.reports||0}</td><td>${r.self||0}</td><td>${r.sab||0}</td><td>${r.repair===null?"?":r.repair}</td><td>${esc(kd)}</td><td>${r.turn?`T${r.turn}`:"—"}</td><td>${r.tasks===null?"—":`${r.tasks}/${r.totalTasks||9}`}</td><td>${esc(r.note||"")}</td></tr>`}).join("")
+ document.getElementById("p-games").innerHTML=rr.sort((a,b)=>a.g-b.g).map(r=>{const g=gameFor(r),kd=r.role==="Imposteur"?(r.kills?.join(" → ")||"Aucun kill"):r.death;return `<tr><td>${r.g}</td><td>${esc(g?.map||"—")}</td><td>${esc(r.role)}</td><td>${resultFor(r)}</td><td>${esc(g?.method||"—")}</td><td>${r.reports||0}</td><td>${r.self||0}</td><td>${r.sab||0}</td><td>${r.repair===null?"?":r.repair}</td><td>${esc(kd)}</td><td>${r.role==="Crew"&&r.deathPos?`${r.deathPos}${r.deathPos===1?"er":"e"}`:"—"}</td><td>${r.turn?`T${r.turn}`:"—"}</td><td>${r.tasks===null?"—":`${r.tasks}/${r.totalTasks||9}`}</td><td>${esc(r.note||"")}</td></tr>`}).join("")
 }
 
 function playerOptions(blank=false,session=null){const list=session?participantsForSession(session):sortedPlayers();return (blank?`<option value="">— Choisir —</option>`:"")+list.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("")}
@@ -225,6 +242,18 @@ document.getElementById("save-entry-btn").addEventListener("click",()=>{
  saveAll();renderAll();document.getElementById("entry-status").textContent=`Enregistré : ${player}, Game ${gnum}. Les pages Stats et Joueurs ont été recalculées.`;
 });
 
+function addAdminSession(){
+ const input=document.getElementById("admin-new-session-date"),status=document.getElementById("admin-session-status"),id=input.value;
+ if(!id){status.textContent="Choisis une date.";return}
+ if(SESSIONS[id]){status.textContent="Cette session existe déjà.";return}
+ SESSIONS[id]=sessionMetaFromId(id);
+ SESSION_PARTICIPANTS[id]=sortedPlayers().map(p=>p.name);
+ saveAll();refreshSessionSelectors();
+ document.getElementById("form-session").value=id;populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();
+ renderSessions();renderAdminParticipants();
+ const adminSel=document.getElementById("admin-participant-session");adminSel.value=id;renderAdminParticipants();
+ status.textContent=`Session du ${SESSIONS[id].label} ajoutée. Tous les membres sont cochés par défaut.`;
+}
 function renderAdminParticipants(){
  const sessionSel=document.getElementById("admin-participant-session"),list=document.getElementById("admin-participants-list");
  const sessions=Object.entries(SESSIONS).sort((a,b)=>b[0].localeCompare(a[0]));
@@ -245,7 +274,7 @@ function saveAdminParticipants(){
  status.textContent=`${names.length} participant${names.length>1?"s":""} enregistré${names.length>1?"s":""} pour cette soirée.`;
 }
 function renderAdmin(){renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><button class="danger" data-i="${idx}">Supprimer</button></div>`}).join("");box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
-document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);
-document.getElementById("admin-reset").addEventListener("click",()=>{RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=structuredClone(DEFAULT_SESSION_PARTICIPANTS);saveAll();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
+document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);
+document.getElementById("admin-reset").addEventListener("click",()=>{SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,PLAYERS.map(p=>p.name)]));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
 function renderAll(){renderStats();renderSessions();renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}
-initEntry();renderAll();
+refreshSessionSelectors();initEntry();renderAll();
