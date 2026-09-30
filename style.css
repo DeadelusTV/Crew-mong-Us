@@ -1688,63 +1688,208 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 .wide-table{min-width:1380px}
 
 
-/* ===== Récompenses Quêtes : Hall / Shame sans refaire les visuels ===== */
-.task-awards{
-  grid-column:1/-1;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:18px;
+/* ==========================================================
+   V6.24 — Nouveaux visuels Hall of Fame / Wall of Shame
+   7 lignes Hall, 8 lignes Shame. Icônes intégrées aux images.
+   ========================================================== */
+
+.visual-hall,
+.visual-shame{
+  aspect-ratio:4/3 !important;
 }
-.task-award{
-  position:relative;
-  overflow:hidden;
-  min-height:126px;
-  padding:20px 22px;
-  border-radius:18px;
-  background:linear-gradient(180deg,rgba(8,28,45,.96),rgba(5,18,31,.98));
-  box-shadow:0 18px 40px rgba(0,0,0,.16),inset 0 0 30px rgba(255,255,255,.02);
+.visual-hall>img,
+.visual-shame>img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:fill !important;
 }
-.task-award::after{
-  content:"";
-  position:absolute;
-  inset:auto -40px -70px auto;
-  width:180px;
-  height:180px;
-  border-radius:50%;
-  opacity:.12;
-  filter:blur(2px);
+
+/* HALL OF FAME : 7 lignes */
+.hall-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
 }
-.task-award-hall{border:1px solid rgba(255,194,49,.52)}
-.task-award-hall::after{background:#ffc231}
-.task-award-shame{border:1px solid rgba(255,53,74,.52)}
-.task-award-shame::after{background:#ff354a}
-.task-award-kicker{
-  font-size:11px;
-  letter-spacing:.16em;
-  font-weight:900;
+.hall-rows .vrow{
+  position:absolute !important;
+  left:10.2% !important;
+  right:4.2% !important;
+  height:7.7% !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 48% !important;
+  align-items:center !important;
+  column-gap:2.2% !important;
+  padding:0 !important;
+  text-shadow:0 2px 5px #000 !important;
+  transform:none !important;
 }
-.task-award-hall .task-award-kicker{color:#ffd867}
-.task-award-shame .task-award-kicker{color:#ff8995}
-.task-award-title{
-  margin-top:5px;
-  font-size:18px;
-  font-weight:900;
+.hall-rows .vrow:nth-child(1){top:27.0% !important}
+.hall-rows .vrow:nth-child(2){top:36.2% !important}
+.hall-rows .vrow:nth-child(3){top:45.4% !important}
+.hall-rows .vrow:nth-child(4){top:54.6% !important}
+.hall-rows .vrow:nth-child(5){top:63.8% !important}
+.hall-rows .vrow:nth-child(6){top:73.0% !important}
+.hall-rows .vrow:nth-child(7){top:82.2% !important}
+
+.visual-hall .vrow .ico{
+  display:none !important;
 }
-.task-award strong{
-  position:relative;
-  z-index:1;
-  display:block;
-  margin-top:10px;
-  font-size:25px;
+.visual-hall .vrow > div{
+  position:static !important;
+  left:auto !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:10px !important;
+  min-width:0 !important;
+  height:100% !important;
+  padding:0 3% 0 0 !important;
+  transform:none !important;
 }
-.task-award small{
-  position:relative;
-  z-index:1;
-  display:block;
-  margin-top:4px;
-  color:var(--muted);
-  font-size:12px;
+.visual-hall .vlabel{
+  color:#fff !important;
+  font-size:clamp(11px,.86vw,16px) !important;
+  line-height:1.04 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
 }
+.visual-hall small{
+  display:block !important;
+  position:static !important;
+  color:#d2dbe6 !important;
+  font-size:clamp(7.5px,.54vw,10px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+.visual-hall .vrow > strong,
+.hall-rows .vrow > strong{
+  position:static !important;
+  left:auto !important;
+  width:100% !important;
+  height:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  padding:0 2% !important;
+  color:#fff !important;
+  font-size:clamp(11px,.86vw,16px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+
+/* WALL OF SHAME : 8 lignes */
+.shame-rows{
+  position:absolute !important;
+  inset:0 !important;
+  display:block !important;
+  z-index:3 !important;
+}
+.shame-rows .vrow{
+  position:absolute !important;
+  left:15.25% !important;
+  right:6.70% !important;
+  height:7.25% !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 34.5% !important;
+  align-items:center !important;
+  column-gap:2.2% !important;
+  padding:0 !important;
+  text-shadow:0 2px 5px #000 !important;
+  transform:none !important;
+}
+.shame-rows .vrow:nth-child(1){top:17.1% !important}
+.shame-rows .vrow:nth-child(2){top:26.3% !important}
+.shame-rows .vrow:nth-child(3){top:35.5% !important}
+.shame-rows .vrow:nth-child(4){top:44.7% !important}
+.shame-rows .vrow:nth-child(5){top:53.9% !important}
+.shame-rows .vrow:nth-child(6){top:63.1% !important}
+.shame-rows .vrow:nth-child(7){top:72.3% !important}
+.shame-rows .vrow:nth-child(8){top:81.5% !important}
+
+.visual-shame .vrow .ico{
+  display:none !important;
+}
+.visual-shame .vrow > div{
+  position:static !important;
+  left:auto !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:10px !important;
+  min-width:0 !important;
+  height:100% !important;
+  padding-left:1.5% !important;
+  padding-right:3.2% !important;
+  transform:none !important;
+}
+.visual-shame .vlabel{
+  font-size:clamp(10.5px,.82vw,15px) !important;
+  line-height:1.04 !important;
+  white-space:nowrap !important;
+}
+.visual-shame small{
+  position:static !important;
+  right:auto !important;
+  top:auto !important;
+  font-size:clamp(7.2px,.52vw,9.5px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+.visual-shame .vrow > strong{
+  position:static !important;
+  left:auto !important;
+  width:100% !important;
+  height:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  padding:0 2% !important;
+  font-size:clamp(10.5px,.82vw,15px) !important;
+  line-height:1.05 !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+
+@media(max-width:900px){
+  .visual-hall .vrow > div,
+  .visual-shame .vrow > div{
+    grid-template-columns:1fr !important;
+    row-gap:2px !important;
+  }
+  .visual-hall small,
+  .visual-shame small{
+    text-align:left !important;
+  }
+}
+
 @media(max-width:700px){
-  .task-awards{grid-template-columns:1fr}
+  .hall-rows .vrow{
+    left:10.2% !important;
+    right:4.2% !important;
+    grid-template-columns:minmax(0,1fr) 48% !important;
+  }
+  .shame-rows .vrow{
+    left:15.25% !important;
+    right:6.70% !important;
+    grid-template-columns:minmax(0,1fr) 34.5% !important;
+  }
+  .visual-hall .vlabel,
+  .visual-hall .vrow > strong,
+  .visual-shame .vlabel,
+  .visual-shame .vrow > strong{
+    font-size:8px !important;
+  }
+  .visual-hall small,
+  .visual-shame small{
+    display:none !important;
+  }
 }
