@@ -155,11 +155,11 @@ function renderStats(){
  const maxCS=Math.max(...tracked.map(x=>x.crew.length/x.rr.length)),career=tracked.filter(x=>x.crew.length/x.rr.length===maxCS),never=impP.filter(x=>x.impEjected===0);
  document.getElementById("hall").innerHTML=[
  vrow(all?"IAOT — Impo of all time":"Imposteur du mois",iaot.map(x=>x.name).join(", "),`${pct(maxIR,1)} de victoires Imposteur`,"crown"),
- vrow("Boss final",mostIW.name,`${mostIW.impWins} victoires en Imposteur • ${pct(mostIW.impWins,mostIW.imp.length)}`,"star"),
- vrow("Valeur sûre du Crew",bestC.map(x=>x.name).join(", "),`${pct(maxCR,1)} de victoires Crew • ${bestC.map(x=>`${x.crewWins}/${x.crew.length}`).join(" • ")}`,"medal"),
- vrow("Abonné au côté obscur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} en Imposteur • ${mostIG.imp.length}/${mostIG.rr.length} games`,"users"),
- vrow("Le Crewmate de carrière",career.map(x=>x.name).join(", "),`${pct(maxCS,1)} Crew • ${career[0].crew.length}/${career[0].rr.length} games`,"shield"),
- vrow("Sous les radars",never.map(x=>x.name).join(", "),never.map(x=>`0 éjection sur ${x.imp.length} Imposteur`).join(" • "),"infinity"),
+ vrow("Boss final",mostIW.name,`${mostIW.impWins} victoire${mostIW.impWins>1?"s":""} en Imposteur`,"star"),
+ vrow("Valeur sûre du Crew",bestC.map(x=>x.name).join(", "),`${pct(maxCR,1)} de victoires Crew`,"medal"),
+ vrow("Abonné au côté obscur",mostIG.name,`${pct(mostIG.imp.length,mostIG.rr.length)} en Imposteur`,"users"),
+ vrow("Le Crewmate de carrière",career.map(x=>x.name).join(", "),`${pct(maxCS,1)} Crew`,"shield"),
+ vrow("Sous les radars",never.map(x=>x.name).join(", "),"0 éjection en Imposteur","infinity"),
  vrow("Employé du mois",bestTasks.length?bestTasks.map(x=>x.name).join(", "):"Pas assez de données",bestTasks.length?bestTasks.map(x=>`${x.taskDone} quêtes`).join(" • "):"Minimum 3 games Crew","bolt")
  ].join("");
 
@@ -168,7 +168,7 @@ function renderStats(){
  document.getElementById("shame").innerHTML=[
  vrow("Impo en période d’essai",zero.length?zero.map(x=>x.name).join(", "):"Personne",zero.length?zero.map(x=>`${x.impWins} victoire${x.impWins>1?"s":""} sur ${x.imp.length} game${x.imp.length>1?"s":""} Imposteur`).join(" • "):"Aucun joueur concerné","cone"),
  vrow("Abonné au SAS",sas.length?sas.map(x=>x.name).join(", "):"Personne",sas.length?`${maxE} éjection${maxE>1?"s":""} en Imposteur`:"Aucun joueur concerné","eject"),
- vrow("VIP du SAS",mostE.map(x=>x.name).join(", "),`${mostE[0].impEjected} éjection${mostE[0].impEjected>1?"s":""} sur ${mostE[0].imp.length} game${mostE[0].imp.length>1?"s":""} • ${pct(maxER,1)}`,"x"),
+ vrow("VIP du SAS",mostE.map(x=>x.name).join(", "),`${pct(maxER,1)} d’éjection en tant qu’Imposteur`,"x"),
  vrow("Fantôme ultime",ghost.map(x=>x.name).join(", "),`Mort en T1 ${maxT1} fois`,"ghost"),
  vrow("Le départ express",express.map(x=>x.name).join(", "),`Mort en premier ${express[0].firstDeath} fois • ${pct(maxFR,1)}`,"fast"),
  vrow("Accusé idéal",sus.length?sus.map(x=>x.name).join(", "):"Personne",sus.length?`${maxCE} éjection(s) en Crew`:"","megaphone"),
