@@ -250,9 +250,59 @@ function addAdminSession(){
  SESSION_PARTICIPANTS[id]=[];
  saveAll();refreshSessionSelectors();
  document.getElementById("form-session").value=id;populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();
- renderSessions();renderAdminParticipants();
+ renderSessions();renderAdminSessions();renderAdminParticipants();
  const adminSel=document.getElementById("admin-participant-session");adminSel.value=id;renderAdminParticipants();
  status.textContent=`Session du ${SESSIONS[id].label} ajoutée. Aucun membre n’est coché par défaut.`;
+}
+function renderAdminSessions(){
+ const box=document.getElementById("admin-sessions-list"),status=document.getElementById("admin-manage-session-status");
+ const ids=sessionIds();
+ box.innerHTML=ids.map(id=>{
+   const games=GAMES.filter(g=>g.session===id).length,records=RECORDS.filter(r=>r.session===id).length;
+   return `<div class="admin-session-row" data-session="${esc(id)}">
+     <div class="admin-session-main">
+       <strong>${esc(SESSIONS[id]?.date||id)}</strong>
+       <small>${games} game${games!==1?"s":""} • ${records} fiche${records!==1?"s":""}</small>
+     </div>
+     <label>Nouvelle date<input class="admin-session-edit-date" type="date" value="${esc(id)}"></label>
+     <div class="admin-session-actions">
+       <button type="button" class="secondary admin-session-edit">Modifier</button>
+       <button type="button" class="danger admin-session-delete">Supprimer</button>
+     </div>
+   </div>`;
+ }).join("");
+ box.querySelectorAll(".admin-session-edit").forEach(btn=>btn.addEventListener("click",()=>editAdminSession(btn.closest(".admin-session-row"))));
+ box.querySelectorAll(".admin-session-delete").forEach(btn=>btn.addEventListener("click",()=>deleteAdminSession(btn.closest(".admin-session-row"))));
+ if(!ids.length)box.innerHTML='<p class="muted">Aucune session enregistrée.</p>';
+ if(status&&!status.textContent)status.textContent="";
+}
+function editAdminSession(row){
+ const oldId=row.dataset.session,newId=row.querySelector(".admin-session-edit-date").value,status=document.getElementById("admin-manage-session-status");
+ if(!newId){status.textContent="Choisis une nouvelle date.";return}
+ if(newId===oldId){status.textContent="La date n’a pas changé.";return}
+ if(SESSIONS[newId]){status.textContent="Une session existe déjà à cette date.";return}
+ SESSIONS[newId]=sessionMetaFromId(newId);delete SESSIONS[oldId];
+ GAMES.forEach(g=>{if(g.session===oldId)g.session=newId});
+ RECORDS.forEach(r=>{if(r.session===oldId)r.session=newId});
+ SESSION_PARTICIPANTS[newId]=SESSION_PARTICIPANTS[oldId]||[];delete SESSION_PARTICIPANTS[oldId];
+ if(currentPlayerMode===oldId)currentPlayerMode=newId;
+ saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+ const adminSel=document.getElementById("admin-participant-session");if([...adminSel.options].some(o=>o.value===newId)){adminSel.value=newId;renderAdminParticipants()}
+ document.getElementById("admin-manage-session-status").textContent=`Session déplacée du ${oldId.split("-").reverse().join("/")} au ${SESSIONS[newId].label}.`;
+}
+function deleteAdminSession(row){
+ const id=row.dataset.session,status=document.getElementById("admin-manage-session-status");
+ if(sessionIds().length<=1){status.textContent="Impossible de supprimer la dernière session.";return}
+ const games=GAMES.filter(g=>g.session===id).length,records=RECORDS.filter(r=>r.session===id).length;
+ const label=SESSIONS[id]?.label||id;
+ if(!confirm(`Supprimer définitivement la session du ${label} ?\n\nCela supprimera aussi ${games} game(s) et ${records} fiche(s) joueur associée(s).`))return;
+ delete SESSIONS[id];delete SESSION_PARTICIPANTS[id];
+ GAMES=GAMES.filter(g=>g.session!==id);RECORDS=RECORDS.filter(r=>r.session!==id);
+ if(currentPlayerMode===id)currentPlayerMode="month";
+ currentScope=availableMonths().includes(currentScope)?currentScope:latestMonth();
+ currentPlayerMonth=availableMonths().includes(currentPlayerMonth)?currentPlayerMonth:latestMonth();
+ saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+ document.getElementById("admin-manage-session-status").textContent=`Session du ${label} supprimée.`;
 }
 function renderAdminParticipants(){
  const sessionSel=document.getElementById("admin-participant-session"),list=document.getElementById("admin-participants-list");
@@ -271,13 +321,12 @@ function saveAdminParticipants(){
  const session=document.getElementById("admin-participant-session").value;
  const names=[...document.querySelectorAll("#admin-participants-list input:checked")].map(x=>x.value);
  const status=document.getElementById("admin-participants-status");
- if(!names.length){status.textContent="Sélectionne au moins un participant.";return}
  SESSION_PARTICIPANTS[session]=names;
  saveAll();
  if(currentEntrySession()===session){syncEntryPlayerOptions();refreshEventPlayerOptions()}
  status.textContent=`${names.length} participant${names.length>1?"s":""} enregistré${names.length>1?"s":""} pour cette soirée.`;
 }
-function renderAdmin(){renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><button class="danger" data-i="${idx}">Supprimer</button></div>`}).join("");box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
+function renderAdmin(){renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><button class="danger" data-i="${idx}">Supprimer</button></div>`}).join("");box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);
 document.getElementById("admin-reset").addEventListener("click",()=>{SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
 function renderAll(){renderStats();renderSessions();renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}
