@@ -201,7 +201,7 @@
   <section id="view-admin" class="view">
     <article class="glass-panel content-panel">
       <div class="section-head">
-        <div><div class="section-title"><span class="section-icon">⚙</span><h2>Administration</h2></div><p>Supprime une fiche ou restaure les données de démonstration.</p></div>
+        <div><div class="section-title"><span class="section-icon">⚙</span><h2>Administration</h2></div><p>Gère les sessions, les participants et les fiches enregistrées.</p></div>
         <button id="admin-reset" class="secondary">Restaurer les données</button>
       </div>
       <div class="subpanel admin-session-create">
@@ -216,6 +216,16 @@
           <input id="admin-new-session-date" type="date">
         </label>
         <span id="admin-session-status" class="muted"></span>
+      </div>
+      <div class="subpanel admin-session-manage gap-top">
+        <div class="subpanel-head">
+          <div>
+            <h3>Gérer les sessions</h3>
+            <p>Corrige la date d’une soirée ou supprime-la en cas d’erreur. Modifier la date conserve les games, fiches et participants associés.</p>
+          </div>
+        </div>
+        <div id="admin-sessions-list" class="admin-sessions-list"></div>
+        <span id="admin-manage-session-status" class="muted"></span>
       </div>
       <div class="subpanel admin-participants-panel gap-top">
         <div class="subpanel-head">
