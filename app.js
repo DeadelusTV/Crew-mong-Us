@@ -558,26 +558,56 @@ function editRecordFromAdmin(index){
  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-entry"));
  window.scrollTo({top:document.getElementById("view-entry").offsetTop-80,behavior:"smooth"});
 }
-document.getElementById("save-entry-btn").addEventListener("click",()=>{
- const session=document.getElementById("form-session").value,gnum=Number(document.getElementById("form-game").value),player=document.getElementById("form-player").value,role=document.getElementById("form-role").value;
- const kills=[];let death="Survit",deathPos=null,deathTurn=null,self=0;
- document.querySelectorAll("#events-list .event-row").forEach(r=>{const type=r.querySelector(".ev-type").value,turn=turnNumber(r.querySelector(".ev-turn").value),target=r.querySelector(".ev-target")?.value||"";if(type==="kill"&&target)kills.push(target);if(type==="death"){death=target?`Tué par ${target}`:"Mort";deathPos=Number(r.querySelector(".ev-pos")?.value)||null;deathTurn=turn}if(type==="self")self++});
- const repairs=Math.max(0,Number(document.getElementById("form-repairs").value)||0);
- const sabotages=role==="Imposteur"?[...document.querySelectorAll("#sabotages-list .sab-type")].map(x=>x.value):[];
- const favSabGame=favoriteFromList(sabotages),ejected=document.getElementById("form-ejected").value==="Oui";
- if(ejected&&death==="Survit")death="Éjecté au conseil";
- const record={session,p:player,g:gnum,role,reports:Number(document.getElementById("form-reports").value)||0,self,sab:sabotages.length,sabotages,repair:role==="Crew"?repairs:0,kills:role==="Imposteur"?kills:undefined,death,deathPos,turn:deathTurn,tasks:role==="Crew"?(Number(document.getElementById("form-tasks").value)||0):null,totalTasks:role==="Crew"?9:null,ejected,note:document.getElementById("form-note").value.trim(),favoriteSabotage:favSabGame?.name||null};
- const identityChanged=editingRecordKey&&(editingRecordKey.session!==session||editingRecordKey.p!==player||editingRecordKey.g!==gnum);
- if(identityChanged&&RECORDS.some(r=>r.session===session&&r.p===player&&r.g===gnum)){alert("Une fiche existe déjà pour ce joueur dans cette game. Modifie-la directement depuis l’Admin.");return}
- if(identityChanged){
-   const old=editingRecordKey,oldIndex=RECORDS.findIndex(r=>r.session===old.session&&r.p===old.p&&r.g===old.g);
-   if(oldIndex>=0)RECORDS.splice(oldIndex,1);
-   if(!RECORDS.some(r=>r.session===old.session&&r.g===old.g))GAMES=GAMES.filter(g=>!(g.session===old.session&&g.n===old.g));
- }
- const ri=RECORDS.findIndex(r=>r.session===session&&r.p===player&&r.g===gnum);if(ri>=0)RECORDS[ri]=record;else RECORDS.push(record);
- const winner=document.getElementById("form-winning-side").value,method=document.getElementById("form-method").value,map=document.getElementById("form-map").value;let game=GAMES.find(g=>g.session===session&&g.n===gnum);if(game){game.map=map;game.winner=winner;game.method=method}else{game={session,n:gnum,map,winner,method,t1Deaths:0};GAMES.push(game)}
- const observedT1=new Set(RECORDS.filter(r=>r.session===session&&r.g===gnum&&r.role==="Crew"&&r.turn===1).map(r=>r.p)).size;game.t1Deaths=Math.max(game.t1Deaths||0,observedT1);
- const wasEditing=!!editingRecordKey;editingRecordKey=null;document.getElementById("save-entry-btn").textContent="Enregistrer la fiche";saveAll();renderAll();document.getElementById("entry-status").textContent=`${wasEditing?"Modifié":"Enregistré"} : ${player}, Game ${gnum}. Les pages Stats et Joueurs ont été recalculées.`;
+document.getElementById("save-entry-btn").addEventListener("click",async()=>{
+  if(!requireAdmin()){
+    document.getElementById("entry-status").textContent="Connecte-toi avec un compte Admin pour enregistrer les données.";
+    return;
+  }
+  const saveButton=document.getElementById("save-entry-btn");
+  const session=document.getElementById("form-session").value,gnum=Number(document.getElementById("form-game").value),player=document.getElementById("form-player").value,role=document.getElementById("form-role").value;
+  const kills=[];let death="Survit",deathPos=null,deathTurn=null,self=0;
+  document.querySelectorAll("#events-list .event-row").forEach(r=>{const type=r.querySelector(".ev-type").value,turn=turnNumber(r.querySelector(".ev-turn").value),target=r.querySelector(".ev-target")?.value||"";if(type==="kill"&&target)kills.push(target);if(type==="death"){death=target?`Tué par ${target}`:"Mort";deathPos=Number(r.querySelector(".ev-pos")?.value)||null;deathTurn=turn}if(type==="self")self++});
+  const repairs=Math.max(0,Number(document.getElementById("form-repairs").value)||0);
+  const sabotages=role==="Imposteur"?[...document.querySelectorAll("#sabotages-list .sab-type")].map(x=>x.value):[];
+  const ejected=document.getElementById("form-ejected").value==="Oui";
+  if(ejected&&death==="Survit")death="Éjecté au conseil";
+  const winner=document.getElementById("form-winning-side").value,method=document.getElementById("form-method").value,map=document.getElementById("form-map").value;
+  const identityChanged=editingRecordKey&&(editingRecordKey.session!==session||editingRecordKey.p!==player||editingRecordKey.g!==gnum);
+  if(identityChanged&&RECORDS.some(r=>r.session===session&&r.p===player&&r.g===gnum)){alert("Une fiche existe déjà pour ce joueur dans cette game. Modifie-la directement depuis l’Admin.");return}
+  const existingRecord=editingRecordKey?RECORDS.find(r=>r.session===editingRecordKey.session&&r.p===editingRecordKey.p&&r.g===editingRecordKey.g):null;
+  const payload={
+    p_existing_record_id:existingRecord?.id||null,
+    p_session_id:session,
+    p_game_number:gnum,
+    p_player_name:player,
+    p_role:role,
+    p_reports:Number(document.getElementById("form-reports").value)||0,
+    p_self_reports:self,
+    p_sabotages:sabotages,
+    p_repair:role==="Crew"?repairs:0,
+    p_kills:role==="Imposteur"?kills:[],
+    p_death:death,
+    p_death_pos:deathPos,
+    p_turn:deathTurn,
+    p_tasks:role==="Crew"?(Number(document.getElementById("form-tasks").value)||0):null,
+    p_total_tasks:role==="Crew"?9:null,
+    p_ejected:ejected,
+    p_note:document.getElementById("form-note").value.trim(),
+    p_map:map,
+    p_winner:winner,
+    p_method:method
+  };
+  const wasEditing=!!editingRecordKey;
+  saveButton.disabled=true;
+  try{
+    await adminUpsertRecordInSupabase(payload);
+    editingRecordKey=null;
+    saveButton.textContent="Enregistrer la fiche";
+    await reloadPublicData();
+    document.getElementById("entry-status").textContent=`${wasEditing?"Modifié":"Enregistré"} : ${player}, Game ${gnum}. Les données sont enregistrées dans Supabase.`;
+  }catch(error){
+    document.getElementById("entry-status").textContent="Erreur Supabase : "+error.message;
+  }finally{saveButton.disabled=false}
 });
 
 async function addAdminSession(){
@@ -762,7 +792,19 @@ async function deleteAdminPlayer(name){
   }catch(error){status.textContent="Erreur Supabase : "+error.message}
 }
 
-function renderAdmin(){if(!adminCanWrite()){renderAdminAccess();return}renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
+function renderAdmin(){if(!adminCanWrite()){renderAdminAccess();return}renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger admin-delete-record" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".admin-delete-record").forEach(b=>b.addEventListener("click",()=>deleteAdminRecord(Number(b.dataset.i))))}
+async function deleteAdminRecord(index){
+  if(!requireAdmin())return;
+  const r=RECORDS[index];if(!r)return;
+  if(!confirm(`Supprimer la fiche de ${r.p}, Game ${r.g} du ${SESSIONS[r.session]?.label||r.session} ?\n\nCette action est irréversible.`))return;
+  try{
+    await adminDeleteRecordInSupabase(r.id);
+    await reloadPublicData();
+  }catch(error){
+    alert("Erreur Supabase : "+error.message);
+  }
+}
+
 supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshAdminAuth(session||null),0)});
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
 document.getElementById("admin-reset").addEventListener("click",()=>{DELETED_SESSIONS.clear();SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));PLAYERS=structuredClone(SEED_PLAYERS).map(p=>({...p,active:true}));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
