@@ -201,11 +201,12 @@
   <section id="view-admin" class="view">
     <article class="glass-panel content-panel">
       <div class="section-head">
-        <div><div class="section-title"><span class="section-icon">⚙</span><h2>Administration</h2></div><p>Gère les sessions, les participants et les fiches enregistrées.</p></div>
+        <div><div class="section-title"><span class="section-icon">⚙</span><h2>Gestion</h2></div><p>Connexion Admin ou Helper. Les Helpers peuvent saisir et modifier les fiches ; les réglages structurels restent réservés aux Admins.</p></div>
         <button id="admin-reset" class="secondary">Recharger les données</button>
       </div>
       <div id="admin-auth-panel" class="subpanel admin-auth-panel"></div>
       <div id="admin-protected">
+      <div id="admin-only-tools">
       <div class="subpanel admin-session-create">
         <div class="subpanel-head">
           <div>
@@ -263,7 +264,16 @@
         <span id="admin-player-status" class="muted"></span>
         <div id="admin-players-list" class="admin-players-list"></div>
       </div>
-      <div id="admin-list" class="admin-list gap-top"></div>
+      </div>
+      <div class="subpanel gap-top">
+        <div class="subpanel-head">
+          <div>
+            <h3>Fiches enregistrées</h3>
+            <p>Les Admins peuvent modifier ou supprimer les fiches. Les Helpers peuvent les modifier, mais pas les supprimer.</p>
+          </div>
+        </div>
+        <div id="admin-list" class="admin-list"></div>
+      </div>
       </div>
     </article>
   </section>
