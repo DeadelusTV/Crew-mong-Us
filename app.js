@@ -2,6 +2,9 @@ const SUPABASE_URL="https://qonkgfbxmtmmwdjzyxuf.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_mwxOhhD8qUEU66MR5lziYw_441p5KRR";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let DATA_SOURCE="localStorage";
+let authUser=null;
+let authRole=null;
+let authLoading=true;
 
 const SEED_PLAYERS=[
 {name:"Meteorann",handle:"meteorann"},{name:"DeadelusTV",handle:"deadelustv"},{name:"MrClegane",handle:"mrclegane"},
@@ -84,6 +87,118 @@ function purgeDeletedSessions(){
 }
 function saveAll(){try{purgeDeletedSessions();localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS));localStorage.setItem(DELETED_SESSION_STORAGE,JSON.stringify([...DELETED_SESSIONS]));localStorage.setItem(PLAYER_STORAGE,JSON.stringify(PLAYERS))}catch{}}
 
+
+async function refreshAdminAuth(sessionOverride=null){
+  authLoading=true;
+  authUser=sessionOverride?.user||null;
+  authRole=null;
+  renderAdminAccess();
+  try{
+    let session=sessionOverride;
+    if(!session){
+      const {data,error}=await supabaseClient.auth.getSession();
+      if(error)throw error;
+      session=data?.session||null;
+    }
+    authUser=session?.user||null;
+    if(authUser){
+      const {data,error}=await supabaseClient.from("user_roles").select("role").eq("user_id",authUser.id).maybeSingle();
+      if(error)throw error;
+      authRole=data?.role||null;
+    }
+  }catch(error){
+    console.error("Crew'mong Us : impossible de vérifier le rôle Admin.",error);
+    authUser=null;authRole=null;
+  }
+  authLoading=false;
+  renderAdminAccess();
+  if(authRole==="admin")renderAdmin();
+}
+
+async function handleAdminLogin(){
+  const email=document.getElementById("admin-login-email")?.value.trim();
+  const password=document.getElementById("admin-login-password")?.value;
+  const status=document.getElementById("admin-auth-status");
+  if(!email||!password){
+    if(status)status.textContent="Renseigne l’adresse e-mail et le mot de passe.";
+    return;
+  }
+  if(status)status.textContent="Connexion…";
+  const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+  if(error){
+    if(status)status.textContent="Connexion impossible : "+error.message;
+    return;
+  }
+  await refreshAdminAuth(data?.session||null);
+  if(authRole!=="admin"){
+    await supabaseClient.auth.signOut();
+    authUser=null;authRole=null;renderAdminAccess();
+    const s=document.getElementById("admin-auth-status");
+    if(s)s.textContent="Ce compte n’a pas de rôle Admin.";
+  }
+}
+
+async function handleAdminLogout(){
+  const {error}=await supabaseClient.auth.signOut();
+  if(error){
+    const status=document.getElementById("admin-auth-status");
+    if(status)status.textContent="Déconnexion impossible : "+error.message;
+    return;
+  }
+  authUser=null;authRole=null;renderAdminAccess();
+}
+
+function renderAdminAccess(){
+  const panel=document.getElementById("admin-auth-panel"),protectedBox=document.getElementById("admin-protected");
+  if(!panel||!protectedBox)return;
+  if(authLoading){
+    panel.innerHTML=`<h3>Accès Administration</h3><p class="muted">Vérification de la session…</p>`;
+    protectedBox.hidden=true;
+    return;
+  }
+  if(authRole==="admin"&&authUser){
+    panel.innerHTML=`<div class="admin-auth-user"><div><h3>Administration déverrouillée</h3><p class="muted">Connecté avec <strong>${esc(authUser.email||"compte Admin")}</strong> • rôle Admin</p></div><button id="admin-logout-btn" class="secondary" type="button">Se déconnecter</button></div>`;
+    protectedBox.hidden=false;
+    document.getElementById("admin-logout-btn")?.addEventListener("click",handleAdminLogout);
+    return;
+  }
+  const message=authUser?"Ce compte n’a pas accès à l’Administration.":"La consultation du site reste publique. Une connexion est nécessaire uniquement pour modifier les données.";
+  panel.innerHTML=`<h3>Accès Administration</h3><p class="muted">${message}</p><form id="admin-login-form" class="admin-auth-form"><label>E-mail<input id="admin-login-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="admin-login-password" type="password" autocomplete="current-password" required></label><div class="admin-auth-actions"><button class="primary" type="submit">Se connecter</button></div></form><span id="admin-auth-status" class="muted admin-auth-status"></span>`;
+  protectedBox.hidden=true;
+  document.getElementById("admin-login-form")?.addEventListener("submit",e=>{e.preventDefault();handleAdminLogin()});
+}
+
+function adminCanWrite(){return authRole==="admin"&&!!authUser}
+function requireAdmin(){
+  if(adminCanWrite())return true;
+  const status=document.getElementById("admin-player-status");
+  if(status)status.textContent="Connecte-toi avec un compte Admin pour modifier les streamers.";
+  return false;
+}
+async function reloadPublicData(){
+  await loadFromSupabase();
+  refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();
+  if(adminCanWrite())renderAdmin();
+}
+async function insertAdminPlayerToSupabase(player){
+  const {data,error}=await supabaseClient.from("players").insert({name:player.name,handle:player.handle,active:true,source:"admin"}).select("id,name,handle,active,source").single();
+  if(error)throw error;
+  return data;
+}
+async function updateAdminPlayerInSupabase(player){
+  const {data,error}=await supabaseClient.from("players").update({name:player.name,handle:player.handle,active:player.active!==false,updated_at:new Date().toISOString()}).eq("id",player.id).select("id,name,handle,active,source").single();
+  if(error)throw error;
+  return data;
+}
+async function toggleAdminPlayerInSupabase(player){
+  const {error}=await supabaseClient.from("players").update({active:player.active!==false,updated_at:new Date().toISOString()}).eq("id",player.id);
+  if(error)throw error;
+}
+async function deleteAdminPlayerInSupabase(player){
+  const {error}=await supabaseClient.rpc("delete_player",{p_player_id:player.id});
+  if(error)throw error;
+}
+
 async function loadFromSupabase(){
   const queries=await Promise.all([
     supabaseClient.from("players").select("id,name,handle,active,source"),
@@ -110,6 +225,7 @@ async function loadFromSupabase(){
   const gameById=new Map(gameRows.map(g=>[g.id,g]));
 
   PLAYERS=playerRows.map(p=>({
+    id:p.id,
     name:String(p.name),
     handle:String(p.handle),
     active:p.active!==false,
@@ -122,6 +238,7 @@ async function loadFromSupabase(){
   ]));
 
   GAMES=gameRows.map(g=>({
+    id:g.id,
     session:g.session_id,
     n:Number(g.game_number),
     map:g.map,
@@ -149,6 +266,8 @@ async function loadFromSupabase(){
       throw new Error("Une fiche Supabase référence une game ou un joueur introuvable.");
     }
     return {
+      id:r.id,
+      gameId:r.game_id,
       session:game.session_id,
       p:playerName,
       g:Number(game.game_number),
@@ -237,7 +356,7 @@ function t1row(label,name,stat){return `<div class="t1mini"><div class="t1copy">
 function mentionRow(label,value,detail){return `<div class="mention-row"><div class="mention-copy"><b class="mention-label">${esc(label)}</b><small class="mention-detail">${esc(detail)}</small></div><strong class="mention-value">${esc(value)}</strong></div>`}
 
 /* navigation */
-document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById("view-"+b.dataset.view).classList.add("active");if(b.dataset.view==="admin")renderAdmin()}));
+document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById("view-"+b.dataset.view).classList.add("active");if(b.dataset.view==="admin"){renderAdminAccess();if(adminCanWrite())renderAdmin()}}));
 document.getElementById("period-select").addEventListener("change",e=>{currentScope=e.target.value;renderStats()});
 document.getElementById("session-month").addEventListener("change",renderSessions);
 document.getElementById("player-month-select").addEventListener("change",e=>{currentPlayerMonth=e.target.value;currentPlayerMode="month";renderPlayerTabs();renderPlayer()});
@@ -543,84 +662,60 @@ function editAdminPlayer(name){
  status.textContent=used?"Ce streamer est déjà utilisé : son nom est verrouillé pour préserver les anciennes données.":"Modifie le nom ou le pseudo Twitch puis enregistre.";
  nameInput.focus();
 }
-function addAdminPlayer(){
- const nameInput=document.getElementById("admin-player-name"),handleInput=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),status=document.getElementById("admin-player-status");
- const oldName=button.dataset.editName||"",name=nameInput.value.trim(),handle=handleInput.value.trim().replace(/^@+/,"");
- if(!name||!handle){status.textContent="Renseigne le nom affiché et le pseudo Twitch.";return}
- const exists=PLAYERS.some(p=>{const same=p.name.toLowerCase()===oldName.toLowerCase();return !same&&(p.name.toLowerCase()===name.toLowerCase()||p.handle.toLowerCase()===handle.toLowerCase())});
- if(exists){status.textContent="Ce nom ou ce pseudo Twitch existe déjà.";return}
- if(oldName){
-   const p=PLAYERS.find(x=>x.name===oldName);
-   if(!p){resetAdminPlayerForm();return}
-   const used=playerIsUsed(oldName);
-   if(used&&name!==oldName){status.textContent="Impossible de renommer ce streamer car il est déjà utilisé dans des données.";return}
-   if(name!==oldName){
-     RECORDS.forEach(r=>{
-       if(r.p===oldName)r.p=name;
-       if(Array.isArray(r.kills))r.kills=r.kills.map(k=>k===oldName?name:k);
-       if(typeof r.death==="string")r.death=r.death.split(oldName).join(name);
-     });
-     Object.keys(SESSION_PARTICIPANTS).forEach(id=>{if(Array.isArray(SESSION_PARTICIPANTS[id]))SESSION_PARTICIPANTS[id]=SESSION_PARTICIPANTS[id].map(n=>n===oldName?name:n)});
-     if(currentPlayer===oldName)currentPlayer=name;
-   }
-   p.name=name;p.handle=handle;
-   saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
-   resetAdminPlayerForm();
-   document.getElementById("admin-player-status").textContent=`${name} a été modifié.`;
-   return;
- }
- PLAYERS.push({name,handle,active:true});
- saveAll();
- refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
- resetAdminPlayerForm();
- document.getElementById("admin-player-status").textContent=`${name} a été ajouté aux streamers.`;
+async function addAdminPlayer(){
+  if(!requireAdmin())return;
+  const nameInput=document.getElementById("admin-player-name"),handleInput=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),status=document.getElementById("admin-player-status");
+  const oldName=button.dataset.editName||"",name=nameInput.value.trim(),handle=handleInput.value.trim().replace(/^@+/,"");
+  if(!name||!handle){status.textContent="Renseigne le nom affiché et le pseudo Twitch.";return}
+  const exists=PLAYERS.some(p=>{const same=p.name.toLowerCase()===oldName.toLowerCase();return !same&&(p.name.toLowerCase()===name.toLowerCase()||p.handle.toLowerCase()===handle.toLowerCase())});
+  if(exists){status.textContent="Ce nom ou ce pseudo Twitch existe déjà.";return}
+  button.disabled=true;
+  try{
+    if(oldName){
+      const p=PLAYERS.find(x=>x.name===oldName);if(!p){resetAdminPlayerForm();return}
+      const used=playerIsUsed(oldName);
+      if(used&&name!==oldName){status.textContent="Impossible de renommer ce streamer car il est déjà utilisé dans des données.";return}
+      p.name=name;p.handle=handle;
+      const saved=await updateAdminPlayerInSupabase(p);
+      p.id=saved.id;p.source=saved.source||p.source||"integrated";
+      if(name!==oldName){
+        RECORDS.forEach(r=>{if(r.p===oldName)r.p=name;if(Array.isArray(r.kills))r.kills=r.kills.map(k=>k===oldName?name:k);if(typeof r.death==="string")r.death=r.death.split(oldName).join(name)});
+        Object.keys(SESSION_PARTICIPANTS).forEach(id=>{if(Array.isArray(SESSION_PARTICIPANTS[id]))SESSION_PARTICIPANTS[id]=SESSION_PARTICIPANTS[id].map(n=>n===oldName?name:n)});
+        if(currentPlayer===oldName)currentPlayer=name;
+      }
+      saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();resetAdminPlayerForm();
+      status.textContent=`${name} a été modifié dans Supabase.`;return;
+    }
+    const saved=await insertAdminPlayerToSupabase({name,handle,active:true});
+    PLAYERS.push({id:saved.id,name:saved.name,handle:saved.handle,active:saved.active,source:saved.source});
+    saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();resetAdminPlayerForm();
+    status.textContent=`${name} a été ajouté dans Supabase.`;
+  }catch(error){status.textContent="Erreur Supabase : "+error.message}
+  finally{button.disabled=false}
 }
-function toggleAdminPlayer(name){
- const p=PLAYERS.find(x=>x.name===name),status=document.getElementById("admin-player-status");
- if(!p)return;
- p.active=p.active===false;
- saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
- status.textContent=p.active?`${name} est de nouveau actif.`:`${name} est maintenant inactif. Il reste visible dans l’historique.`;
+async function toggleAdminPlayer(name){
+  if(!requireAdmin())return;
+  const p=PLAYERS.find(x=>x.name===name),status=document.getElementById("admin-player-status");if(!p)return;
+  const previous=p.active;p.active=p.active===false;
+  try{
+    await toggleAdminPlayerInSupabase(p);saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+    status.textContent=p.active?`${name} est de nouveau actif.`:`${name} est maintenant inactif. Il reste visible dans l’historique.`;
+  }catch(error){p.active=previous;status.textContent="Erreur Supabase : "+error.message}
 }
-function deleteAdminPlayer(name){
- const status=document.getElementById("admin-player-status");
- const p=PLAYERS.find(x=>x.name===name);
- if(!p)return;
- const used=playerIsUsed(name);
- const warning=used
-   ? `\\n\\nCette suppression retirera aussi ${name} de ses anciennes statistiques, parties et listes de participants. Les autres joueurs conserveront leurs données, mais les références à ${name} seront supprimées.\\n\\nCette action est irréversible. Continuer ?`
-   : `\\n\\nSupprimer ${name} de la liste des streamers ?`;
- if(!confirm(warning))return;
-
- // Remove the player's own records.
- RECORDS=RECORDS.filter(r=>r.p!==name);
-
- // Remove the player from kills, death descriptions and notes of remaining records.
- RECORDS.forEach(r=>{
-   if(Array.isArray(r.kills))r.kills=r.kills.filter(k=>k!==name);
-   if(typeof r.death==="string"&&r.death.includes(name))r.death=r.death.replaceAll(name,"un joueur supprimé");
-   if(typeof r.note==="string"&&r.note.includes(name))r.note=r.note.replaceAll(name,"un joueur supprimé");
- });
-
- // Remove the player from all saved session participant lists.
- Object.keys(SESSION_PARTICIPANTS).forEach(id=>{
-   if(Array.isArray(SESSION_PARTICIPANTS[id]))SESSION_PARTICIPANTS[id]=SESSION_PARTICIPANTS[id].filter(n=>n!==name);
- });
-
- // Recalculate T1 deaths after removing the player records.
- GAMES.forEach(game=>{
-   game.t1Deaths=RECORDS.filter(r=>r.session===game.session&&r.g===game.n&&r.role==="Crew"&&r.turn===1).length;
- });
-
- PLAYERS=PLAYERS.filter(x=>x.name!==name);
- if(currentPlayer===name)currentPlayer=sortedPlayers()[0]?.name||"";
- saveAll();
- refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
- status.textContent=used
-   ? `${name} et ses données historiques ont été supprimés.`
-   : `${name} a été supprimé.`;
+async function deleteAdminPlayer(name){
+  if(!requireAdmin())return;
+  const status=document.getElementById("admin-player-status"),p=PLAYERS.find(x=>x.name===name);if(!p)return;
+  const used=playerIsUsed(name);
+  const warning=used?`\\n\\nCette suppression retirera aussi ${name} de ses anciennes statistiques, parties et listes de participants. Les autres joueurs conserveront leurs données, mais les références à ${name} seront supprimées.\\n\\nCette action est irréversible. Continuer ?`:`\\n\\nSupprimer ${name} de la liste des streamers ?`;
+  if(!confirm(warning))return;
+  try{
+    await deleteAdminPlayerInSupabase(p);await reloadPublicData();
+    status.textContent=used?`${name} et ses données historiques ont été supprimés de Supabase.`:`${name} a été supprimé de Supabase.`;
+  }catch(error){status.textContent="Erreur Supabase : "+error.message}
 }
-function renderAdmin(){renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
+
+function renderAdmin(){if(!adminCanWrite()){renderAdminAccess();return}renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".danger").forEach(b=>b.addEventListener("click",()=>{RECORDS.splice(Number(b.dataset.i),1);saveAll();renderAll();renderAdmin()}))}
+supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshAdminAuth(session||null),0)});
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
 document.getElementById("admin-reset").addEventListener("click",()=>{DELETED_SESSIONS.clear();SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));PLAYERS=structuredClone(SEED_PLAYERS).map(p=>({...p,active:true}));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
 /* ===== Initialisation et rendu global ===== */
@@ -635,5 +730,6 @@ async function startApp(){
   refreshSessionSelectors();
   initEntry();
   renderAll();
+  await refreshAdminAuth();
 }
 startApp();
