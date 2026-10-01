@@ -1,5 +1,8 @@
 const SUPABASE_URL="https://qonkgfbxmtmmwdjzyxuf.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_mwxOhhD8qUEU66MR5lziYw_441p5KRR";
+const AUTH_HASH_PARAMS=new URLSearchParams(window.location.hash.replace(/^#/,""));
+const AUTH_QUERY_PARAMS=new URLSearchParams(window.location.search);
+let authSetupRequested=["invite","recovery"].includes(AUTH_HASH_PARAMS.get("type"))||["invite","recovery"].includes(AUTH_QUERY_PARAMS.get("type"));
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let authUser=null;
 let authRole=null;
@@ -38,6 +41,7 @@ async function refreshAdminAuth(sessionOverride=null){
   }
   authLoading=false;
   renderAdminAccess();
+  renderAccountSetup();
   if(editorCanWrite())renderAdmin();
 }
 
@@ -71,7 +75,66 @@ async function handleAdminLogout(){
     if(status)status.textContent="Déconnexion impossible : "+error.message;
     return;
   }
-  authUser=null;authRole=null;renderAdminAccess();
+  authUser=null;authRole=null;renderAdminAccess();renderAccountSetup();
+}
+
+function accountSetupNeeded(){
+  if(!authUser)return false;
+  const setupDone=authUser.user_metadata?.crew_setup_complete===true;
+  return !setupDone&&(authSetupRequested||!authRole);
+}
+
+function renderAccountSetup(){
+  const overlay=document.getElementById("account-setup-overlay");
+  const email=document.getElementById("account-setup-email");
+  if(!overlay)return;
+  const show=accountSetupNeeded();
+  overlay.hidden=!show;
+  if(show&&email)email.textContent=authUser?.email||"Compte invité";
+}
+
+async function handleAccountSetup(event){
+  event.preventDefault();
+  const password=document.getElementById("account-setup-password")?.value||"";
+  const confirmPassword=document.getElementById("account-setup-password-confirm")?.value||"";
+  const button=document.getElementById("account-setup-submit");
+  const status=document.getElementById("account-setup-status");
+
+  if(password.length<8){
+    if(status)status.textContent="Choisis un mot de passe d’au moins 8 caractères.";
+    return;
+  }
+  if(password!==confirmPassword){
+    if(status)status.textContent="Les deux mots de passe ne correspondent pas.";
+    return;
+  }
+
+  if(button)button.disabled=true;
+  if(status)status.textContent="Création du mot de passe…";
+
+  const {data,error}=await supabaseClient.auth.updateUser({
+    password,
+    data:{crew_setup_complete:true}
+  });
+
+  if(error){
+    if(status)status.textContent="Impossible de créer le mot de passe : "+error.message;
+    if(button)button.disabled=false;
+    return;
+  }
+
+  authUser=data?.user||authUser;
+  authSetupRequested=false;
+  history.replaceState(null,"",window.location.pathname);
+  if(status)status.textContent="Mot de passe créé. Ton compte est prêt.";
+  document.getElementById("account-setup-password").value="";
+  document.getElementById("account-setup-password-confirm").value="";
+
+  setTimeout(async()=>{
+    renderAccountSetup();
+    await refreshAdminAuth();
+    if(button)button.disabled=false;
+  },700);
 }
 
 function renderAdminAccess(){
@@ -751,6 +814,7 @@ async function deleteAdminRecord(index){
   }
 }
 
+document.getElementById("account-setup-form")?.addEventListener("submit",handleAccountSetup);
 supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshAdminAuth(session||null),0)});
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
 document.getElementById("admin-reset").addEventListener("click",async()=>{if(!requireEditor())return;try{await reloadPublicData();const status=document.getElementById("admin-manage-session-status");if(status&&!status.closest("#admin-only-tools")?.hidden)status.textContent="Données rechargées depuis Supabase."}catch(error){alert("Erreur Supabase : "+error.message)}});
