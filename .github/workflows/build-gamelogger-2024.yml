@@ -1,0 +1,53 @@
+name: Build GameLogger 2024.3.5
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - gamelogger-2024.3.5-no-reactor
+    paths:
+      - ".github/workflows/build-gamelogger-2024.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout helper branch
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "6.0.x"
+
+      - name: Fetch GameLogger 2024.3.5 source
+        run: |
+          git clone https://github.com/whichtwix/GameLogger.git upstream-gamelogger
+          cd upstream-gamelogger
+          git checkout 7add7254002659d2c2215d79184dd0efad53eb54
+
+      - name: Remove Reactor dependency
+        run: |
+          cd upstream-gamelogger
+          sed -i '/PackageReference Include="Reactor"/d' GameLogger/GameLogger.csproj
+          sed -i '/using Reactor;/d' GameLogger/GameLoggerPlugin.cs
+          sed -i '/BepInDependency(ReactorPlugin.Id)/d' GameLogger/GameLoggerPlugin.cs
+          sed -i 's/"1.0.0")]/"1.0.0-borcompat")]/' GameLogger/GameLoggerPlugin.cs
+
+      - name: Restore
+        run: |
+          cd upstream-gamelogger
+          dotnet restore GameLogger.sln --configfile nuget.config
+
+      - name: Build
+        run: |
+          cd upstream-gamelogger
+          dotnet build GameLogger.sln -c Release --no-restore
+
+      - name: Upload GameLogger DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameLogger-2024.3.5-no-reactor
+          path: upstream-gamelogger/GameLogger/bin/Release/net6.0/GameLogger.dll
+          if-no-files-found: error
