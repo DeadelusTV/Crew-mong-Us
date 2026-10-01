@@ -249,7 +249,7 @@ async function loadFromSupabase(){
     supabaseClient.from("sessions").select("id,date_label,month,label"),
     supabaseClient.from("games").select("id,session_id,game_number,map,winner,method,t1_deaths"),
     supabaseClient.from("session_participants").select("session_id,player_id"),
-    supabaseClient.from("records").select("game_id,player_id,role,reports,self_reports,sabotage_count,sabotages,repair,kills,death,death_pos,turn,tasks,total_tasks,ejected,note")
+    supabaseClient.from("records").select("id,game_id,player_id,role,reports,self_reports,sabotage_count,sabotages,repair,kills,death,death_pos,turn,tasks,total_tasks,ejected,note")
   ]);
   const failed=queries.find(q=>q.error);
   if(failed?.error) throw failed.error;
