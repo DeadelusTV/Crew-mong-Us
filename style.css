@@ -448,3 +448,9 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   min-height:1.4em;
   margin-top:12px;
 }
+
+
+/* La saisie n'est visible dans la navigation qu'après authentification Admin/Helper. */
+.top-nav .nav[hidden]{
+  display:none !important;
+}
