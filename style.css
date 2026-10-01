@@ -415,3 +415,36 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
   .admin-auth-form{grid-template-columns:1fr;align-items:stretch}
   .admin-auth-user{align-items:flex-start;flex-direction:column}
 }
+
+
+/* ===== Auth : finalisation d'un compte invité ===== */
+.auth-setup-overlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(2,8,14,.88);
+  backdrop-filter:blur(8px);
+}
+.auth-setup-overlay[hidden]{display:none}
+.auth-setup-card{
+  width:min(560px,100%);
+  padding:26px;
+}
+.auth-setup-card h2{margin:6px 0 10px}
+.auth-setup-card p{margin:0 0 12px}
+.account-setup-form{
+  display:grid;
+  gap:14px;
+  margin-top:18px;
+}
+.account-setup-form label{display:grid;gap:6px}
+.account-setup-form input{width:100%}
+.auth-setup-status{
+  display:block;
+  min-height:1.4em;
+  margin-top:12px;
+}
