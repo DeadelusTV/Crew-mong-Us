@@ -1,92 +1,18 @@
 const SUPABASE_URL="https://qonkgfbxmtmmwdjzyxuf.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_mwxOhhD8qUEU66MR5lziYw_441p5KRR";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-let DATA_SOURCE="localStorage";
 let authUser=null;
 let authRole=null;
 let authLoading=true;
 
-const SEED_PLAYERS=[
-{name:"Meteorann",handle:"meteorann"},{name:"DeadelusTV",handle:"deadelustv"},{name:"MrClegane",handle:"mrclegane"},
-{name:"Pwatrinn",handle:"pwatrinn"},{name:"RC_Imperator",handle:"rc_imperator"},{name:"Bunny_Island",handle:"_bunny_island_"},
-{name:"AnsyTV",handle:"ansytv"},{name:"MiguelAngelo_TV",handle:"_miguelangelo"},{name:"Psyster",handle:"psyster"},{name:"Jerlapive",handle:"jerlapive"}
-];
-const SEED_SESSIONS={"2026-09-28":{date:"28 septembre 2026",month:"2026-09",label:"28/09/2026"}};
-const SEED_GAMES=[
-{session:"2026-09-28",n:1,map:"The Fungle",winner:"Imposteurs",method:"Kills",t1Deaths:3},
-{session:"2026-09-28",n:2,map:"Polus",winner:"Imposteurs",method:"Kills",t1Deaths:1},
-{session:"2026-09-28",n:3,map:"Polus",winner:"Crewmates",method:"Votes",t1Deaths:1},
-{session:"2026-09-28",n:4,map:"MIRA HQ",winner:"Imposteurs",method:"Sabotage",t1Deaths:1},
-{session:"2026-09-28",n:5,map:"Polus",winner:"Imposteurs",method:"Kills",t1Deaths:1},
-{session:"2026-09-28",n:6,map:"Polus",winner:"Imposteurs",method:"Sabotage",t1Deaths:1},
-{session:"2026-09-28",n:7,map:"Polus",winner:"Imposteurs",method:"Votes",t1Deaths:2},
-{session:"2026-09-28",n:8,map:"Polus",winner:"Imposteurs",method:"Kills",t1Deaths:2}
-];
-const SEED_RECORDS=[
-{session:"2026-09-28",p:"Bunny_Island",g:1,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:0,death:"Tuée par Pwatrinn",deathPos:6,turn:3,tasks:3,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Bunny_Island",g:2,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tuée par Psyster",deathPos:2,turn:2,tasks:9,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Bunny_Island",g:3,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Survit",deathPos:null,turn:null,tasks:6,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Bunny_Island",g:4,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Survit",deathPos:null,turn:null,tasks:7,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Bunny_Island",g:5,role:"Imposteur",reports:0,self:0,sab:0,sabotages:[],repair:0,kills:["MrClegane","MiguelAngelo_TV","DeadelusTV"],death:"Survit",turn:null,tasks:null,totalTasks:null,ejected:false,note:""},
-{session:"2026-09-28",p:"Bunny_Island",g:6,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tuée par RC_Imperator",deathPos:6,turn:3,tasks:6,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Bunny_Island",g:7,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tuée par Psyster",deathPos:1,turn:1,tasks:8,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Bunny_Island",g:8,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tuée par RC_Imperator",deathPos:2,turn:1,tasks:9,totalTasks:9,ejected:false,note:""},
-
-{session:"2026-09-28",p:"RC_Imperator",g:1,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:1,death:"Tué par Pwatrinn",deathPos:7,turn:3,tasks:6,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"RC_Imperator",g:2,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:0,death:"Éjecté au conseil",deathPos:null,turn:null,tasks:9,totalTasks:9,ejected:true,note:"Éjecté 4e"},
-{session:"2026-09-28",p:"RC_Imperator",g:3,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:2,death:"Tué par MiguelAngelo_TV",deathPos:3,turn:2,tasks:3,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"RC_Imperator",g:4,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:1,death:"Tué par DeadelusTV",deathPos:4,turn:3,tasks:4,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"RC_Imperator",g:5,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Éjecté au conseil",deathPos:null,turn:null,tasks:6,totalTasks:9,ejected:true,note:"Éjecté 3e"},
-{session:"2026-09-28",p:"RC_Imperator",g:6,role:"Imposteur",reports:0,self:0,sab:5,sabotages:["Radio / Sismique","Radio / Sismique","Radio / Sismique","Radio / Sismique","Radio / Sismique"],repair:0,kills:["DeadelusTV","MiguelAngelo_TV","Pwatrinn","Jerlapive","Bunny_Island"],death:"Survit",turn:null,tasks:null,totalTasks:null,ejected:false,note:""},
-{session:"2026-09-28",p:"RC_Imperator",g:7,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:0,death:"Survit",deathPos:null,turn:null,tasks:5,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"RC_Imperator",g:8,role:"Imposteur",reports:0,self:0,sab:5,sabotages:["Radio / Sismique","Radio / Sismique","Radio / Sismique","Radio / Sismique","Radio / Sismique"],repair:0,kills:["Pwatrinn","Bunny_Island","Meteorann","MiguelAngelo_TV"],death:"Éjecté au conseil",turn:null,tasks:null,totalTasks:null,ejected:true,note:"Éliminé 2e"},
-
-{session:"2026-09-28",p:"Meteorann",g:1,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tué par MiguelAngelo_TV",deathPos:4,turn:2,tasks:6,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Meteorann",g:2,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tué par AnsyTV",deathPos:3,turn:2,tasks:9,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Meteorann",g:3,role:"Crew",reports:2,self:0,sab:0,sabotages:[],repair:2,death:"Tué par MiguelAngelo_TV",deathPos:5,turn:4,tasks:9,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Meteorann",g:4,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tué par DeadelusTV",deathPos:1,turn:1,tasks:8,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Meteorann",g:5,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tué par Pwatrinn",deathPos:3,turn:2,tasks:6,totalTasks:9,ejected:false,note:""},
-{session:"2026-09-28",p:"Meteorann",g:6,role:"Imposteur",reports:1,self:0,sab:3,sabotages:["Portes","Portes","Portes"],repair:0,kills:["MrClegane"],death:"Éjecté au conseil",turn:null,tasks:null,totalTasks:null,ejected:true,note:"Éliminé 3e"},
-{session:"2026-09-28",p:"Meteorann",g:7,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Éjecté au conseil",deathPos:null,turn:null,tasks:7,totalTasks:9,ejected:true,note:"Éjecté 2e conseil"},
-{session:"2026-09-28",p:"Meteorann",g:8,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:0,death:"Tué par RC_Imperator",deathPos:3,turn:2,tasks:9,totalTasks:9,ejected:false,note:""},
-
-{session:"2026-09-28",p:"AnsyTV",g:1,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:null,death:"Tuée par Pwatrinn",deathPos:5,turn:2,tasks:2,totalTasks:9,ejected:false,note:"Réparations non renseignées"},
-{session:"2026-09-28",p:"AnsyTV",g:2,role:"Imposteur",reports:0,self:0,sab:3,sabotages:[],repair:0,kills:["Meteorann","MiguelAngelo_TV"],death:"Survit",turn:null,tasks:null,totalTasks:null,ejected:false,note:"Sabotages détaillés non renseignés"},
-{session:"2026-09-28",p:"AnsyTV",g:3,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:null,death:"Tuée par MrClegane",deathPos:1,turn:1,tasks:5,totalTasks:9,ejected:false,note:"Réparations non renseignées"},
-{session:"2026-09-28",p:"AnsyTV",g:4,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:null,death:"Survit",deathPos:null,turn:null,tasks:4,totalTasks:9,ejected:false,note:"Réparations non renseignées"},
-{session:"2026-09-28",p:"AnsyTV",g:5,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:null,death:"Tuée par Pwatrinn",deathPos:5,turn:3,tasks:5,totalTasks:9,ejected:false,note:"Réparations non renseignées"},
-{session:"2026-09-28",p:"AnsyTV",g:6,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:null,death:"Survit",deathPos:null,turn:null,tasks:6,totalTasks:9,ejected:false,note:"Réparations non renseignées"},
-{session:"2026-09-28",p:"AnsyTV",g:7,role:"Crew",reports:0,self:0,sab:0,sabotages:[],repair:null,death:"Tuée par MiguelAngelo_TV",deathPos:2,turn:1,tasks:8,totalTasks:9,ejected:false,note:"Réparations non renseignées"},
-{session:"2026-09-28",p:"AnsyTV",g:8,role:"Crew",reports:1,self:0,sab:0,sabotages:[],repair:null,death:"Tuée par MrClegane",deathPos:6,turn:3,tasks:7,totalTasks:9,ejected:false,note:"Réparations non renseignées"}
-];
 const SABOTAGE_TYPES=["Oxygène","Réacteur","Lumières","Radio","Sismiques","Portes","Champignon"];
-const RECORD_STORAGE="crewmongus-v6-records",GAME_STORAGE="crewmongus-v6-games",PARTICIPANT_STORAGE="crewmongus-v6-session-participants",SESSION_STORAGE="crewmongus-v6-sessions",DELETED_SESSION_STORAGE="crewmongus-v6-deleted-sessions",PLAYER_STORAGE="crewmongus-v6-custom-players";
-let DELETED_SESSIONS=new Set(loadJson(DELETED_SESSION_STORAGE,[]));
-let SESSIONS=loadJson(SESSION_STORAGE,SEED_SESSIONS);
-let DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));
-let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS),PLAYERS=loadPlayers();
-purgeDeletedSessions();
+let DELETED_SESSIONS=new Set();
+let SESSIONS={};
+let DEFAULT_SESSION_PARTICIPANTS={};
+let RECORDS=[],GAMES=[],SESSION_PARTICIPANTS={},PLAYERS=[];
 let currentScope=latestMonth(),currentPlayer="Bunny_Island",currentPlayerMonth=latestMonth(),currentPlayerMode="month",editingRecordKey=null;
 
-/* ===== Données et stockage ===== */
-function loadJson(key,seed){try{const v=localStorage.getItem(key);return v?JSON.parse(v):structuredClone(seed)}catch{return structuredClone(seed)}}
-function loadPlayers(){
- const saved=loadJson(PLAYER_STORAGE,[]);
- const source=Array.isArray(saved)&&saved.length?saved:SEED_PLAYERS;
- const map=new Map(SEED_PLAYERS.map(p=>[p.name.toLowerCase(),{...p,active:true}]));
- source.forEach(p=>{
-   if(!p||!p.name||!p.handle)return;
-   map.set(String(p.name).toLowerCase(),{name:String(p.name),handle:String(p.handle),active:p.active!==false});
- });
- return [...map.values()];
-}
-function purgeDeletedSessions(){
- DELETED_SESSIONS.forEach(id=>{delete SESSIONS[id];delete SESSION_PARTICIPANTS[id]});
- GAMES=GAMES.filter(g=>!DELETED_SESSIONS.has(g.session));
- RECORDS=RECORDS.filter(r=>!DELETED_SESSIONS.has(r.session));
-}
-function saveAll(){try{purgeDeletedSessions();localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS));localStorage.setItem(DELETED_SESSION_STORAGE,JSON.stringify([...DELETED_SESSIONS]));localStorage.setItem(PLAYER_STORAGE,JSON.stringify(PLAYERS))}catch{}}
-
+/* ===== Authentification et données Supabase ===== */
 
 async function refreshAdminAuth(sessionOverride=null){
   authLoading=true;
@@ -335,8 +261,6 @@ async function loadFromSupabase(){
   });
 
   DELETED_SESSIONS=new Set();
-  DATA_SOURCE="supabase";
-  saveAll();
   console.info("Crew'mong Us : données chargées depuis Supabase.");
 }
 /* ===== Helpers de sessions et joueurs ===== */
@@ -761,12 +685,12 @@ async function addAdminPlayer(){
         Object.keys(SESSION_PARTICIPANTS).forEach(id=>{if(Array.isArray(SESSION_PARTICIPANTS[id]))SESSION_PARTICIPANTS[id]=SESSION_PARTICIPANTS[id].map(n=>n===oldName?name:n)});
         if(currentPlayer===oldName)currentPlayer=name;
       }
-      saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();resetAdminPlayerForm();
+      refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();resetAdminPlayerForm();
       status.textContent=`${name} a été modifié dans Supabase.`;return;
     }
     const saved=await insertAdminPlayerToSupabase({name,handle,active:true});
     PLAYERS.push({id:saved.id,name:saved.name,handle:saved.handle,active:saved.active,source:saved.source});
-    saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();resetAdminPlayerForm();
+    refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();resetAdminPlayerForm();
     status.textContent=`${name} a été ajouté dans Supabase.`;
   }catch(error){status.textContent="Erreur Supabase : "+error.message}
   finally{button.disabled=false}
@@ -776,7 +700,7 @@ async function toggleAdminPlayer(name){
   const p=PLAYERS.find(x=>x.name===name),status=document.getElementById("admin-player-status");if(!p)return;
   const previous=p.active;p.active=p.active===false;
   try{
-    await toggleAdminPlayerInSupabase(p);saveAll();refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
+    await toggleAdminPlayerInSupabase(p);refreshSessionSelectors();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
     status.textContent=p.active?`${name} est de nouveau actif.`:`${name} est maintenant inactif. Il reste visible dans l’historique.`;
   }catch(error){p.active=previous;status.textContent="Erreur Supabase : "+error.message}
 }
@@ -814,8 +738,10 @@ async function startApp(){
   try{
     await loadFromSupabase();
   }catch(error){
-    DATA_SOURCE="localStorage";
-    console.error("Crew'mong Us : impossible de charger Supabase, utilisation de la sauvegarde locale.",error);
+    console.error("Crew'mong Us : impossible de charger les données Supabase.",error);
+    const main=document.querySelector("main");
+    if(main)main.innerHTML=`<section class="view active"><article class="panel"><div class="section-title"><span class="section-icon">!</span><h2>Données indisponibles</h2></div><p>Impossible de charger les données depuis Supabase. Aucune sauvegarde locale n’est affichée afin d’éviter de présenter des données périmées.</p><p class="muted">Recharge la page dans quelques instants.</p></article></section>`;
+    return;
   }
   refreshSessionSelectors();
   initEntry();
