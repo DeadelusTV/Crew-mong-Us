@@ -1,3 +1,8 @@
+const SUPABASE_URL="https://qonkgfbxmtmmwdjzyxuf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_mwxOhhD8qUEU66MR5lziYw_441p5KRR";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let DATA_SOURCE="localStorage";
+
 const SEED_PLAYERS=[
 {name:"Meteorann",handle:"meteorann"},{name:"DeadelusTV",handle:"deadelustv"},{name:"MrClegane",handle:"mrclegane"},
 {name:"Pwatrinn",handle:"pwatrinn"},{name:"RC_Imperator",handle:"rc_imperator"},{name:"Bunny_Island",handle:"_bunny_island_"},
@@ -55,7 +60,7 @@ const SABOTAGE_TYPES=["Oxygène","Réacteur","Lumières","Radio","Sismiques","Po
 const RECORD_STORAGE="crewmongus-v6-records",GAME_STORAGE="crewmongus-v6-games",PARTICIPANT_STORAGE="crewmongus-v6-session-participants",SESSION_STORAGE="crewmongus-v6-sessions",DELETED_SESSION_STORAGE="crewmongus-v6-deleted-sessions",PLAYER_STORAGE="crewmongus-v6-custom-players";
 let DELETED_SESSIONS=new Set(loadJson(DELETED_SESSION_STORAGE,[]));
 let SESSIONS=loadJson(SESSION_STORAGE,SEED_SESSIONS);
-const DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));
+let DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));
 let RECORDS=loadJson(RECORD_STORAGE,SEED_RECORDS),GAMES=loadJson(GAME_STORAGE,SEED_GAMES),SESSION_PARTICIPANTS=loadJson(PARTICIPANT_STORAGE,DEFAULT_SESSION_PARTICIPANTS),PLAYERS=loadPlayers();
 purgeDeletedSessions();
 let currentScope=latestMonth(),currentPlayer="Bunny_Island",currentPlayerMonth=latestMonth(),currentPlayerMode="month",editingRecordKey=null;
@@ -78,6 +83,97 @@ function purgeDeletedSessions(){
  RECORDS=RECORDS.filter(r=>!DELETED_SESSIONS.has(r.session));
 }
 function saveAll(){try{purgeDeletedSessions();localStorage.setItem(RECORD_STORAGE,JSON.stringify(RECORDS));localStorage.setItem(GAME_STORAGE,JSON.stringify(GAMES));localStorage.setItem(PARTICIPANT_STORAGE,JSON.stringify(SESSION_PARTICIPANTS));localStorage.setItem(SESSION_STORAGE,JSON.stringify(SESSIONS));localStorage.setItem(DELETED_SESSION_STORAGE,JSON.stringify([...DELETED_SESSIONS]));localStorage.setItem(PLAYER_STORAGE,JSON.stringify(PLAYERS))}catch{}}
+
+async function loadFromSupabase(){
+  const queries=await Promise.all([
+    supabaseClient.from("players").select("id,name,handle,active,source"),
+    supabaseClient.from("sessions").select("id,date_label,month,label"),
+    supabaseClient.from("games").select("id,session_id,game_number,map,winner,method,t1_deaths"),
+    supabaseClient.from("session_participants").select("session_id,player_id"),
+    supabaseClient.from("records").select("game_id,player_id,role,reports,self_reports,sabotage_count,sabotages,repair,kills,death,death_pos,turn,tasks,total_tasks,ejected,note")
+  ]);
+  const failed=queries.find(q=>q.error);
+  if(failed?.error) throw failed.error;
+
+  const [playersQ,sessionsQ,gamesQ,participantsQ,recordsQ]=queries;
+  const playerRows=playersQ.data||[];
+  const sessionRows=sessionsQ.data||[];
+  const gameRows=gamesQ.data||[];
+  const participantRows=participantsQ.data||[];
+  const recordRows=recordsQ.data||[];
+
+  if(!sessionRows.length && !gameRows.length && !recordRows.length){
+    throw new Error("Supabase a répondu sans données. Conservation de la sauvegarde locale.");
+  }
+
+  const playerById=new Map(playerRows.map(p=>[p.id,p.name]));
+  const gameById=new Map(gameRows.map(g=>[g.id,g]));
+
+  PLAYERS=playerRows.map(p=>({
+    name:String(p.name),
+    handle:String(p.handle),
+    active:p.active!==false,
+    source:p.source||"integrated"
+  }));
+
+  SESSIONS=Object.fromEntries(sessionRows.map(s=>[
+    s.id,
+    {date:s.date_label,month:s.month,label:s.label}
+  ]));
+
+  GAMES=gameRows.map(g=>({
+    session:g.session_id,
+    n:Number(g.game_number),
+    map:g.map,
+    winner:g.winner,
+    method:g.method,
+    t1Deaths:Number(g.t1_deaths||0)
+  }));
+
+  DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(
+    Object.keys(SESSIONS).map(id=>[id,[]])
+  );
+  SESSION_PARTICIPANTS=DEFAULT_SESSION_PARTICIPANTS;
+
+  participantRows.forEach(row=>{
+    const name=playerById.get(row.player_id);
+    if(name&&SESSION_PARTICIPANTS[row.session_id]){
+      SESSION_PARTICIPANTS[row.session_id].push(name);
+    }
+  });
+
+  RECORDS=recordRows.map(r=>{
+    const game=gameById.get(r.game_id);
+    const playerName=playerById.get(r.player_id);
+    if(!game||!playerName){
+      throw new Error("Une fiche Supabase référence une game ou un joueur introuvable.");
+    }
+    return {
+      session:game.session_id,
+      p:playerName,
+      g:Number(game.game_number),
+      role:r.role,
+      reports:Number(r.reports||0),
+      self:Number(r.self_reports||0),
+      sab:Number(r.sabotage_count||0),
+      sabotages:Array.isArray(r.sabotages)?r.sabotages:[],
+      repair:r.repair===null?null:Number(r.repair||0),
+      kills:Array.isArray(r.kills)?r.kills:[],
+      death:r.death,
+      deathPos:r.death_pos===null?null:Number(r.death_pos),
+      turn:r.turn===null?null:Number(r.turn),
+      tasks:r.tasks===null?null:Number(r.tasks),
+      totalTasks:r.total_tasks===null?null:Number(r.total_tasks),
+      ejected:r.ejected===true,
+      note:r.note||""
+    };
+  });
+
+  DELETED_SESSIONS=new Set();
+  DATA_SOURCE="supabase";
+  saveAll();
+  console.info("Crew'mong Us : données chargées depuis Supabase.");
+}
 /* ===== Helpers de sessions et joueurs ===== */
 function sessionIds(){return Object.keys(SESSIONS).sort((a,b)=>b.localeCompare(a))}
 function availableMonths(){return [...new Set(sessionIds().map(id=>SESSIONS[id]?.month).filter(Boolean))].sort((a,b)=>b.localeCompare(a))}
@@ -529,4 +625,15 @@ document.getElementById("admin-add-session-btn").addEventListener("click",addAdm
 document.getElementById("admin-reset").addEventListener("click",()=>{DELETED_SESSIONS.clear();SESSIONS=structuredClone(SEED_SESSIONS);RECORDS=structuredClone(SEED_RECORDS);GAMES=structuredClone(SEED_GAMES);SESSION_PARTICIPANTS=Object.fromEntries(Object.keys(SESSIONS).map(id=>[id,[]]));PLAYERS=structuredClone(SEED_PLAYERS).map(p=>({...p,active:true}));currentScope=latestMonth();currentPlayerMonth=latestMonth();saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();renderAll();renderAdmin()});
 /* ===== Initialisation et rendu global ===== */
 function renderAll(){renderStats();renderSessions();renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}
-refreshSessionSelectors();initEntry();renderAll();
+async function startApp(){
+  try{
+    await loadFromSupabase();
+  }catch(error){
+    DATA_SOURCE="localStorage";
+    console.error("Crew'mong Us : impossible de charger Supabase, utilisation de la sauvegarde locale.",error);
+  }
+  refreshSessionSelectors();
+  initEntry();
+  renderAll();
+}
+startApp();
