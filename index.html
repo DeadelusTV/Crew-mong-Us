@@ -9,6 +9,24 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="account-setup-overlay" class="auth-setup-overlay" hidden>
+  <div class="glass-panel auth-setup-card" role="dialog" aria-modal="true" aria-labelledby="account-setup-title">
+    <div class="eyebrow">INVITATION CREW’MONG US</div>
+    <h2 id="account-setup-title">Finaliser ton compte</h2>
+    <p>Ton adresse e-mail est confirmée. Choisis maintenant le mot de passe qui servira à te connecter à Crew’mong Us.</p>
+    <p class="muted">Compte : <strong id="account-setup-email">—</strong></p>
+    <form id="account-setup-form" class="account-setup-form">
+      <label>Nouveau mot de passe
+        <input id="account-setup-password" type="password" autocomplete="new-password" minlength="8" required>
+      </label>
+      <label>Confirmer le mot de passe
+        <input id="account-setup-password-confirm" type="password" autocomplete="new-password" minlength="8" required>
+      </label>
+      <button id="account-setup-submit" class="primary" type="submit">Créer mon mot de passe</button>
+    </form>
+    <span id="account-setup-status" class="muted auth-setup-status"></span>
+  </div>
+</div>
 <div class="page-stars"></div>
 
 <header class="visual-hero">
