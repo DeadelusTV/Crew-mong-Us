@@ -401,3 +401,17 @@ footer{position:relative;z-index:1;text-align:center;color:#6f889a;font-size:12p
 
 
 
+
+/* ===== Admin : authentification ===== */
+.admin-auth-panel{margin-bottom:18px}
+.admin-auth-panel h3{margin:0 0 6px}
+.admin-auth-form{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto;gap:12px;align-items:end;margin-top:14px}
+.admin-auth-form label{display:block}
+.admin-auth-form input{width:100%}
+.admin-auth-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.admin-auth-status{display:block;margin-top:10px}
+.admin-auth-user{display:flex;align-items:center;justify-content:space-between;gap:14px}
+@media(max-width:800px){
+  .admin-auth-form{grid-template-columns:1fr;align-items:stretch}
+  .admin-auth-user{align-items:flex-start;flex-direction:column}
+}
