@@ -217,8 +217,10 @@ async function loadFromSupabase(){
   const participantRows=participantsQ.data||[];
   const recordRows=recordsQ.data||[];
 
-  if(!sessionRows.length && !gameRows.length && !recordRows.length){
-    throw new Error("Supabase a répondu sans données. Conservation de la sauvegarde locale.");
+  if(!playerRows.length || !sessionRows.length || !gameRows.length || !recordRows.length){
+    throw new Error(
+      `Supabase a répondu avec des données incomplètes (joueurs: ${playerRows.length}, sessions: ${sessionRows.length}, games: ${gameRows.length}, fiches: ${recordRows.length}). Conservation de la sauvegarde locale.`
+    );
   }
 
   const playerById=new Map(playerRows.map(p=>[p.id,p.name]));
