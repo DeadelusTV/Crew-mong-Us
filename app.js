@@ -38,7 +38,7 @@ async function refreshAdminAuth(sessionOverride=null){
   }
   authLoading=false;
   renderAdminAccess();
-  if(authRole==="admin")renderAdmin();
+  if(editorCanWrite())renderAdmin();
 }
 
 async function handleAdminLogin(){
@@ -56,11 +56,11 @@ async function handleAdminLogin(){
     return;
   }
   await refreshAdminAuth(data?.session||null);
-  if(authRole!=="admin"){
+  if(!editorCanWrite()){
     await supabaseClient.auth.signOut();
     authUser=null;authRole=null;renderAdminAccess();
     const s=document.getElementById("admin-auth-status");
-    if(s)s.textContent="Ce compte n’a pas de rôle Admin.";
+    if(s)s.textContent="Ce compte n’a pas de rôle Admin ou Helper.";
   }
 }
 
@@ -75,36 +75,44 @@ async function handleAdminLogout(){
 }
 
 function renderAdminAccess(){
-  const panel=document.getElementById("admin-auth-panel"),protectedBox=document.getElementById("admin-protected");
+  const panel=document.getElementById("admin-auth-panel"),protectedBox=document.getElementById("admin-protected"),adminOnly=document.getElementById("admin-only-tools");
   if(!panel||!protectedBox)return;
   if(authLoading){
-    panel.innerHTML=`<h3>Accès Administration</h3><p class="muted">Vérification de la session…</p>`;
+    panel.innerHTML=`<h3>Accès Gestion</h3><p class="muted">Vérification de la session…</p>`;
     protectedBox.hidden=true;
+    if(adminOnly)adminOnly.hidden=true;
     return;
   }
-  if(authRole==="admin"&&authUser){
-    panel.innerHTML=`<div class="admin-auth-user"><div><h3>Administration déverrouillée</h3><p class="muted">Connecté avec <strong>${esc(authUser.email||"compte Admin")}</strong> • rôle Admin</p></div><button id="admin-logout-btn" class="secondary" type="button">Se déconnecter</button></div>`;
+  if(editorCanWrite()){
+    const isAdmin=authRole==="admin";
+    panel.innerHTML=`<div class="admin-auth-user"><div><h3>${isAdmin?"Administration":"Accès Helper"} déverrouillé${isAdmin?"":" "}</h3><p class="muted">Connecté avec <strong>${esc(authUser.email||"compte")}</strong> • rôle ${isAdmin?"Admin":"Helper"}${isAdmin?"":" • saisie et modification des fiches"}</p></div><button id="admin-logout-btn" class="secondary" type="button">Se déconnecter</button></div>`;
     protectedBox.hidden=false;
+    if(adminOnly)adminOnly.hidden=!isAdmin;
     document.getElementById("admin-logout-btn")?.addEventListener("click",handleAdminLogout);
     return;
   }
-  const message=authUser?"Ce compte n’a pas accès à l’Administration.":"La consultation du site reste publique. Une connexion est nécessaire uniquement pour modifier les données.";
-  panel.innerHTML=`<h3>Accès Administration</h3><p class="muted">${message}</p><form id="admin-login-form" class="admin-auth-form"><label>E-mail<input id="admin-login-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="admin-login-password" type="password" autocomplete="current-password" required></label><div class="admin-auth-actions"><button class="primary" type="submit">Se connecter</button></div></form><span id="admin-auth-status" class="muted admin-auth-status"></span>`;
+  const message=authUser?"Ce compte n’a pas accès à la gestion.":"La consultation du site reste publique. Une connexion Admin ou Helper est nécessaire uniquement pour modifier les données.";
+  panel.innerHTML=`<h3>Accès Gestion</h3><p class="muted">${message}</p><form id="admin-login-form" class="admin-auth-form"><label>E-mail<input id="admin-login-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="admin-login-password" type="password" autocomplete="current-password" required></label><div class="admin-auth-actions"><button class="primary" type="submit">Se connecter</button></div></form><span id="admin-auth-status" class="muted admin-auth-status"></span>`;
   protectedBox.hidden=true;
+  if(adminOnly)adminOnly.hidden=true;
   document.getElementById("admin-login-form")?.addEventListener("submit",e=>{e.preventDefault();handleAdminLogin()});
 }
 
+function editorCanWrite(){return (authRole==="admin"||authRole==="helper")&&!!authUser}
 function adminCanWrite(){return authRole==="admin"&&!!authUser}
+function requireEditor(){
+  return editorCanWrite();
+}
 function requireAdmin(){
   if(adminCanWrite())return true;
   const status=document.getElementById("admin-player-status");
-  if(status)status.textContent="Connecte-toi avec un compte Admin pour modifier les streamers.";
+  if(status)status.textContent="Cette action est réservée aux comptes Admin.";
   return false;
 }
 async function reloadPublicData(){
   await loadFromSupabase();
   refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();
-  if(adminCanWrite())renderAdmin();
+  if(editorCanWrite())renderAdmin();
 }
 async function insertAdminPlayerToSupabase(player){
   const {data,error}=await supabaseClient.from("players").insert({name:player.name,handle:player.handle,active:true,source:"admin"}).select("id,name,handle,active,source").single();
@@ -483,8 +491,8 @@ function editRecordFromAdmin(index){
  window.scrollTo({top:document.getElementById("view-entry").offsetTop-80,behavior:"smooth"});
 }
 document.getElementById("save-entry-btn").addEventListener("click",async()=>{
-  if(!requireAdmin()){
-    document.getElementById("entry-status").textContent="Connecte-toi avec un compte Admin pour enregistrer les données.";
+  if(!requireEditor()){
+    document.getElementById("entry-status").textContent="Connecte-toi avec un compte Admin ou Helper pour enregistrer les données.";
     return;
   }
   const saveButton=document.getElementById("save-entry-btn");
@@ -716,7 +724,21 @@ async function deleteAdminPlayer(name){
   }catch(error){status.textContent="Erreur Supabase : "+error.message}
 }
 
-function renderAdmin(){if(!adminCanWrite()){renderAdminAccess();return}renderAdminPlayers();renderAdminSessions();renderAdminParticipants();const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));box.innerHTML=sorted.map(r=>{const idx=RECORDS.indexOf(r),g=gameFor(r);return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button><button class="danger admin-delete-record" data-i="${idx}" type="button">Supprimer</button></div></div>`}).join("");box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));box.querySelectorAll(".admin-delete-record").forEach(b=>b.addEventListener("click",()=>deleteAdminRecord(Number(b.dataset.i))))}
+function renderAdmin(){
+  if(!editorCanWrite()){renderAdminAccess();return}
+  const isAdmin=adminCanWrite();
+  const adminOnly=document.getElementById("admin-only-tools");
+  if(adminOnly)adminOnly.hidden=!isAdmin;
+  if(isAdmin){renderAdminPlayers();renderAdminSessions();renderAdminParticipants()}
+  const box=document.getElementById("admin-list"),sorted=[...RECORDS].sort((a,b)=>b.session.localeCompare(a.session)||b.g-a.g||a.p.localeCompare(b.p));
+  box.innerHTML=sorted.map(r=>{
+    const idx=RECORDS.indexOf(r),g=gameFor(r);
+    const deleteButton=isAdmin?`<button class="danger admin-delete-record" data-i="${idx}" type="button">Supprimer</button>`:"";
+    return `<div class="admin-item"><div><strong>${esc(r.p)} • ${esc(SESSIONS[r.session]?.label||r.session)} • Game ${r.g}</strong><small>${esc(g?.map||"—")} • ${esc(r.role)} • ${resultFor(r)}</small></div><div class="admin-item-actions"><button class="secondary admin-edit-record" data-i="${idx}" type="button">Modifier</button>${deleteButton}</div></div>`;
+  }).join("");
+  box.querySelectorAll(".admin-edit-record").forEach(b=>b.addEventListener("click",()=>editRecordFromAdmin(Number(b.dataset.i))));
+  if(isAdmin)box.querySelectorAll(".admin-delete-record").forEach(b=>b.addEventListener("click",()=>deleteAdminRecord(Number(b.dataset.i))));
+}
 async function deleteAdminRecord(index){
   if(!requireAdmin())return;
   const r=RECORDS[index];if(!r)return;
@@ -731,7 +753,7 @@ async function deleteAdminRecord(index){
 
 supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshAdminAuth(session||null),0)});
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
-document.getElementById("admin-reset").addEventListener("click",async()=>{if(!requireAdmin())return;try{await reloadPublicData();document.getElementById("admin-manage-session-status").textContent="Données rechargées depuis Supabase."}catch(error){document.getElementById("admin-manage-session-status").textContent="Erreur Supabase : "+error.message}});
+document.getElementById("admin-reset").addEventListener("click",async()=>{if(!requireEditor())return;try{await reloadPublicData();const status=document.getElementById("admin-manage-session-status");if(status&&!status.closest("#admin-only-tools")?.hidden)status.textContent="Données rechargées depuis Supabase."}catch(error){alert("Erreur Supabase : "+error.message)}});
 /* ===== Initialisation et rendu global ===== */
 function renderAll(){renderStats();renderSessions();renderPlayerList();syncPlayerMonth();renderPlayerTabs();renderPlayer()}
 async function startApp(){
