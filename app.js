@@ -68,6 +68,23 @@ async function handleAdminLogin(){
   }
 }
 
+async function handlePasswordLink(){
+  const email=document.getElementById("admin-login-email")?.value.trim();
+  const status=document.getElementById("admin-auth-status");
+  if(!email){
+    if(status)status.textContent="Entre d’abord l’adresse e-mail du compte.";
+    return;
+  }
+  if(status)status.textContent="Envoi du lien…";
+  const redirectTo=window.location.origin+window.location.pathname;
+  const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo});
+  if(error){
+    if(status)status.textContent="Impossible d’envoyer le lien : "+error.message;
+    return;
+  }
+  if(status)status.textContent="Un lien pour définir ou réinitialiser le mot de passe a été envoyé par e-mail.";
+}
+
 async function handleAdminLogout(){
   const {error}=await supabaseClient.auth.signOut();
   if(error){
@@ -155,10 +172,11 @@ function renderAdminAccess(){
     return;
   }
   const message=authUser?"Ce compte n’a pas accès à la gestion.":"La consultation du site reste publique. Une connexion Admin ou Helper est nécessaire uniquement pour modifier les données.";
-  panel.innerHTML=`<h3>Accès Gestion</h3><p class="muted">${message}</p><form id="admin-login-form" class="admin-auth-form"><label>E-mail<input id="admin-login-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="admin-login-password" type="password" autocomplete="current-password" required></label><div class="admin-auth-actions"><button class="primary" type="submit">Se connecter</button></div></form><span id="admin-auth-status" class="muted admin-auth-status"></span>`;
+  panel.innerHTML=`<h3>Accès Gestion</h3><p class="muted">${message}</p><form id="admin-login-form" class="admin-auth-form"><label>E-mail<input id="admin-login-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="admin-login-password" type="password" autocomplete="current-password" required></label><div class="admin-auth-actions"><button class="primary" type="submit">Se connecter</button><button id="admin-password-link" class="secondary" type="button">Définir / réinitialiser le mot de passe</button></div></form><span id="admin-auth-status" class="muted admin-auth-status"></span>`;
   protectedBox.hidden=true;
   if(adminOnly)adminOnly.hidden=true;
   document.getElementById("admin-login-form")?.addEventListener("submit",e=>{e.preventDefault();handleAdminLogin()});
+  document.getElementById("admin-password-link")?.addEventListener("click",handlePasswordLink);
 }
 
 function editorCanWrite(){return (authRole==="admin"||authRole==="helper")&&!!authUser}
@@ -815,7 +833,10 @@ async function deleteAdminRecord(index){
 }
 
 document.getElementById("account-setup-form")?.addEventListener("submit",handleAccountSetup);
-supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(()=>refreshAdminAuth(session||null),0)});
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+  if(event==="PASSWORD_RECOVERY")authSetupRequested=true;
+  setTimeout(()=>refreshAdminAuth(session||null),0);
+});
 document.getElementById("admin-add-session-btn").addEventListener("click",addAdminSession);document.getElementById("admin-participant-session").addEventListener("change",renderAdminParticipants);document.getElementById("clear-participants-btn").addEventListener("click",clearAdminParticipants);document.getElementById("save-participants-btn").addEventListener("click",saveAdminParticipants);document.getElementById("admin-add-player-btn").addEventListener("click",addAdminPlayer);document.getElementById("admin-cancel-player-edit").addEventListener("click",resetAdminPlayerForm);
 document.getElementById("admin-reset").addEventListener("click",async()=>{if(!requireEditor())return;try{await reloadPublicData();const status=document.getElementById("admin-manage-session-status");if(status&&!status.closest("#admin-only-tools")?.hidden)status.textContent="Données rechargées depuis Supabase."}catch(error){alert("Erreur Supabase : "+error.message)}});
 /* ===== Initialisation et rendu global ===== */
