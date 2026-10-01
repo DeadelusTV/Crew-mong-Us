@@ -199,6 +199,50 @@ async function deleteAdminPlayerInSupabase(player){
   if(error)throw error;
 }
 
+async function adminCreateSessionInSupabase(session){
+  const {data,error}=await supabaseClient.rpc("admin_create_session",{
+    p_id:session.id,
+    p_date_label:session.date,
+    p_month:session.month,
+    p_label:session.label
+  });
+  if(error)throw error;
+  return data;
+}
+async function adminUpdateSessionInSupabase(oldId,newId,session){
+  const {data,error}=await supabaseClient.rpc("admin_update_session",{
+    p_old_id:oldId,
+    p_new_id:newId,
+    p_date_label:session.date,
+    p_month:session.month,
+    p_label:session.label
+  });
+  if(error)throw error;
+  return data;
+}
+async function adminDeleteSessionInSupabase(id){
+  const {error}=await supabaseClient.rpc("admin_delete_session",{p_session_id:id});
+  if(error)throw error;
+}
+async function adminSaveParticipantsInSupabase(session,names){
+  const playerIds=names.map(name=>PLAYERS.find(p=>p.name===name)?.id).filter(Boolean);
+  if(playerIds.length!==names.length)throw new Error("Un participant sélectionné est introuvable dans Supabase.");
+  const {error}=await supabaseClient.rpc("admin_save_participants",{
+    p_session_id:session,
+    p_player_ids:playerIds
+  });
+  if(error)throw error;
+}
+async function adminUpsertRecordInSupabase(payload){
+  const {data,error}=await supabaseClient.rpc("admin_upsert_record",payload);
+  if(error)throw error;
+  return data;
+}
+async function adminDeleteRecordInSupabase(id){
+  const {error}=await supabaseClient.rpc("admin_delete_record",{p_record_id:id});
+  if(error)throw error;
+}
+
 async function loadFromSupabase(){
   const queries=await Promise.all([
     supabaseClient.from("players").select("id,name,handle,active,source"),
@@ -536,18 +580,19 @@ document.getElementById("save-entry-btn").addEventListener("click",()=>{
  const wasEditing=!!editingRecordKey;editingRecordKey=null;document.getElementById("save-entry-btn").textContent="Enregistrer la fiche";saveAll();renderAll();document.getElementById("entry-status").textContent=`${wasEditing?"Modifié":"Enregistré"} : ${player}, Game ${gnum}. Les pages Stats et Joueurs ont été recalculées.`;
 });
 
-function addAdminSession(){
- const input=document.getElementById("admin-new-session-date"),status=document.getElementById("admin-session-status"),id=input.value;
- if(!id){status.textContent="Choisis une date.";return}
- if(SESSIONS[id]&&!DELETED_SESSIONS.has(id)){status.textContent="Cette session existe déjà.";return}
- DELETED_SESSIONS.delete(id);
- SESSIONS[id]=sessionMetaFromId(id);
- SESSION_PARTICIPANTS[id]=[];
- saveAll();refreshSessionSelectors();
- document.getElementById("form-session").value=id;populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();
- renderSessions();renderAdminSessions();renderAdminParticipants();
- const adminSel=document.getElementById("admin-participant-session");adminSel.value=id;renderAdminParticipants();
- status.textContent=`Session du ${SESSIONS[id].label} ajoutée. Aucun membre n’est coché par défaut.`;
+async function addAdminSession(){
+  if(!requireAdmin())return;
+  const input=document.getElementById("admin-new-session-date"),status=document.getElementById("admin-session-status"),id=input.value;
+  if(!id){status.textContent="Choisis une date.";return}
+  if(SESSIONS[id]&&!DELETED_SESSIONS.has(id)){status.textContent="Cette session existe déjà.";return}
+  const meta=sessionMetaFromId(id);
+  try{
+    await adminCreateSessionInSupabase({id,date:meta.date,month:meta.month,label:meta.label});
+    await reloadPublicData();
+    document.getElementById("form-session").value=id;populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();
+    const adminSel=document.getElementById("admin-participant-session");adminSel.value=id;renderAdminParticipants();
+    status.textContent=`Session du ${meta.label} ajoutée dans Supabase. Aucun membre n’est coché par défaut.`;
+  }catch(error){status.textContent="Erreur Supabase : "+error.message}
 }
 function renderAdminSessions(){
  const box=document.getElementById("admin-sessions-list"),status=document.getElementById("admin-manage-session-status");
@@ -571,35 +616,33 @@ function renderAdminSessions(){
  if(!ids.length)box.innerHTML='<p class="muted">Aucune session enregistrée.</p>';
  if(status&&!status.textContent)status.textContent="";
 }
-function editAdminSession(row){
- const oldId=row.dataset.session,newId=row.querySelector(".admin-session-edit-date").value,status=document.getElementById("admin-manage-session-status");
- if(!newId){status.textContent="Choisis une nouvelle date.";return}
- if(newId===oldId){status.textContent="La date n’a pas changé.";return}
- if(SESSIONS[newId]){status.textContent="Une session existe déjà à cette date.";return}
- DELETED_SESSIONS.add(oldId);DELETED_SESSIONS.delete(newId);
- SESSIONS[newId]=sessionMetaFromId(newId);delete SESSIONS[oldId];
- GAMES.forEach(g=>{if(g.session===oldId)g.session=newId});
- RECORDS.forEach(r=>{if(r.session===oldId)r.session=newId});
- SESSION_PARTICIPANTS[newId]=SESSION_PARTICIPANTS[oldId]||[];delete SESSION_PARTICIPANTS[oldId];
- if(currentPlayerMode===oldId)currentPlayerMode=newId;
- saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
- const adminSel=document.getElementById("admin-participant-session");if([...adminSel.options].some(o=>o.value===newId)){adminSel.value=newId;renderAdminParticipants()}
- document.getElementById("admin-manage-session-status").textContent=`Session déplacée du ${oldId.split("-").reverse().join("/")} au ${SESSIONS[newId].label}.`;
+async function editAdminSession(row){
+  if(!requireAdmin())return;
+  const oldId=row.dataset.session,newId=row.querySelector(".admin-session-edit-date").value,status=document.getElementById("admin-manage-session-status");
+  if(!newId){status.textContent="Choisis une nouvelle date.";return}
+  if(newId===oldId){status.textContent="La date n’a pas changé.";return}
+  if(SESSIONS[newId]){status.textContent="Une session existe déjà à cette date.";return}
+  const meta=sessionMetaFromId(newId);
+  try{
+    await adminUpdateSessionInSupabase(oldId,newId,meta);
+    await reloadPublicData();
+    const adminSel=document.getElementById("admin-participant-session");
+    if([...adminSel.options].some(o=>o.value===newId)){adminSel.value=newId;renderAdminParticipants()}
+    status.textContent=`Session déplacée du ${oldId.split("-").reverse().join("/")} au ${meta.label} dans Supabase.`;
+  }catch(error){status.textContent="Erreur Supabase : "+error.message}
 }
-function deleteAdminSession(row){
- const id=row.dataset.session,status=document.getElementById("admin-manage-session-status");
- if(sessionIds().length<=1){status.textContent="Impossible de supprimer la dernière session.";return}
- const games=GAMES.filter(g=>g.session===id).length,records=RECORDS.filter(r=>r.session===id).length;
- const label=SESSIONS[id]?.label||id;
- if(!confirm(`Supprimer définitivement la session du ${label} ?\n\nCela supprimera aussi ${games} game(s) et ${records} fiche(s) joueur associée(s).`))return;
- DELETED_SESSIONS.add(id);
- delete SESSIONS[id];delete SESSION_PARTICIPANTS[id];
- GAMES=GAMES.filter(g=>g.session!==id);RECORDS=RECORDS.filter(r=>r.session!==id);
- if(currentPlayerMode===id)currentPlayerMode="month";
- currentScope=availableMonths().includes(currentScope)?currentScope:latestMonth();
- currentPlayerMonth=availableMonths().includes(currentPlayerMonth)?currentPlayerMonth:latestMonth();
- saveAll();refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();renderAdmin();
- document.getElementById("admin-manage-session-status").textContent=`Session du ${label} supprimée.`;
+async function deleteAdminSession(row){
+  if(!requireAdmin())return;
+  const id=row.dataset.session,status=document.getElementById("admin-manage-session-status");
+  if(sessionIds().length<=1){status.textContent="Impossible de supprimer la dernière session.";return}
+  const games=GAMES.filter(g=>g.session===id).length,records=RECORDS.filter(r=>r.session===id).length;
+  const label=SESSIONS[id]?.label||id;
+  if(!confirm(`Supprimer définitivement la session du ${label} ?\n\nCela supprimera aussi ${games} game(s) et ${records} fiche(s) joueur associée(s).\n\nCette action est irréversible.`))return;
+  try{
+    await adminDeleteSessionInSupabase(id);
+    await reloadPublicData();
+    status.textContent=`Session du ${label} supprimée de Supabase.`;
+  }catch(error){status.textContent="Erreur Supabase : "+error.message}
 }
 function renderAdminParticipants(){
  const sessionSel=document.getElementById("admin-participant-session"),list=document.getElementById("admin-participants-list");
@@ -614,14 +657,17 @@ function clearAdminParticipants(){
  document.querySelectorAll("#admin-participants-list input[type=\"checkbox\"]").forEach(x=>x.checked=false);
  document.getElementById("admin-participants-status").textContent="Tous les participants ont été décochés. Clique sur Enregistrer pour valider.";
 }
-function saveAdminParticipants(){
- const session=document.getElementById("admin-participant-session").value;
- const names=[...document.querySelectorAll("#admin-participants-list input:checked")].map(x=>x.value);
- const status=document.getElementById("admin-participants-status");
- SESSION_PARTICIPANTS[session]=names;
- saveAll();
- if(currentEntrySession()===session){syncEntryPlayerOptions();refreshEventPlayerOptions()}
- status.textContent=`${names.length} participant${names.length>1?"s":""} enregistré${names.length>1?"s":""} pour cette soirée.`;
+async function saveAdminParticipants(){
+  if(!requireAdmin())return;
+  const session=document.getElementById("admin-participant-session").value;
+  const names=[...document.querySelectorAll("#admin-participants-list input:checked")].map(x=>x.value);
+  const status=document.getElementById("admin-participants-status");
+  try{
+    await adminSaveParticipantsInSupabase(session,names);
+    await reloadPublicData();
+    if(currentEntrySession()===session){syncEntryPlayerOptions();refreshEventPlayerOptions()}
+    status.textContent=`${names.length} participant${names.length>1?"s":""} enregistré${names.length>1?"s":""} dans Supabase pour cette soirée.`;
+  }catch(error){status.textContent="Erreur Supabase : "+error.message}
 }
 function resetAdminPlayerForm(){
  const name=document.getElementById("admin-player-name"),handle=document.getElementById("admin-player-handle"),button=document.getElementById("admin-add-player-btn"),cancel=document.getElementById("admin-cancel-player-edit"),status=document.getElementById("admin-player-status");
