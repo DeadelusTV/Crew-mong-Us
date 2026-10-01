@@ -42,6 +42,7 @@ async function refreshAdminAuth(sessionOverride=null){
   authLoading=false;
   renderAdminAccess();
   renderAccountSetup();
+  syncEditorNavigation();
   if(editorCanWrite())renderAdmin();
 }
 
@@ -62,7 +63,7 @@ async function handleAdminLogin(){
   await refreshAdminAuth(data?.session||null);
   if(!editorCanWrite()){
     await supabaseClient.auth.signOut();
-    authUser=null;authRole=null;renderAdminAccess();
+    authUser=null;authRole=null;renderAdminAccess();syncEditorNavigation();
     const s=document.getElementById("admin-auth-status");
     if(s)s.textContent="Ce compte n’a pas de rôle Admin ou Helper.";
   }
@@ -92,7 +93,7 @@ async function handleAdminLogout(){
     if(status)status.textContent="Déconnexion impossible : "+error.message;
     return;
   }
-  authUser=null;authRole=null;renderAdminAccess();renderAccountSetup();
+  authUser=null;authRole=null;renderAdminAccess();renderAccountSetup();syncEditorNavigation();
 }
 
 function accountSetupNeeded(){
@@ -181,6 +182,20 @@ function renderAdminAccess(){
 
 function editorCanWrite(){return (authRole==="admin"||authRole==="helper")&&!!authUser}
 function adminCanWrite(){return authRole==="admin"&&!!authUser}
+
+function syncEditorNavigation(){
+  const entryNav=document.querySelector('.nav[data-view="entry"]');
+  const entryView=document.getElementById("view-entry");
+  const canEdit=editorCanWrite();
+
+  if(entryNav)entryNav.hidden=!canEdit;
+
+  if(!canEdit&&entryView?.classList.contains("active")){
+    document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("active",x.dataset.view==="admin"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-admin"));
+    renderAdminAccess();
+  }
+}
 function requireEditor(){
   return editorCanWrite();
 }
