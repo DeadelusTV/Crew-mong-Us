@@ -86,7 +86,7 @@ async function handlePasswordLink(){
 }
 
 async function handleAdminLogout(){
-  const {error}=await supabaseClient.auth.signOut();
+  const {error}=await supabaseClient.auth.signOut({scope:"local"});
   if(error){
     const status=document.getElementById("admin-auth-status");
     if(status)status.textContent="Déconnexion impossible : "+error.message;
