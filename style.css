@@ -11,7 +11,7 @@ button,select,input{font:inherit}.visual-hero{position:relative;z-index:1;max-wi
 .period-toolbar{display:flex;justify-content:space-between;align-items:center;gap:22px;padding:17px 20px;margin-bottom:16px}.period-toolbar h1{margin:3px 0 5px;font-size:28px}.period-toolbar p{margin:0;color:var(--muted)}.period-toolbar label{min-width:230px}.eyebrow{font-size:12px;letter-spacing:.18em;color:#83e8ff;font-weight:800}
 label{display:grid;gap:6px;color:#bfd0dc;font-size:13px}select,input{width:100%;background:#061827;color:var(--text);border:1px solid #1e526f;border-radius:9px;padding:10px 11px;outline:none}select:focus,input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(34,220,255,.08)}
 .visual-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.visual-card{position:relative;overflow:hidden;border-radius:24px;box-shadow:0 24px 55px rgba(0,0,0,.30)}.visual-card>img{display:block;width:100%;height:auto;user-select:none;pointer-events:none}.visual-mentions{grid-column:1/-1}
-/* Taux de win — V6.8 : asset 4:3 identique aux autres cadres */
+/* Taux de win — asset 4:3 identique aux autres cadres */
 .visual-win{aspect-ratio:4/3}
 .visual-win>img{width:100%;height:100%;object-fit:fill}
 .win-overlay{position:absolute;inset:0;text-shadow:0 2px 5px #000}
