@@ -17,7 +17,7 @@ using HarmonyLib;
 
 namespace GameLogger;
 
-[BepInAutoPlugin("com.whichtwix.gamelogger", "GameLogger", "2.1.0-crewmon")]
+[BepInAutoPlugin("com.whichtwix.gamelogger", "GameLogger", "2.1.1-crewmon")]
 [BepInProcess("Among Us.exe")]
 public partial class GameLogger : BasePlugin
 {
@@ -89,7 +89,7 @@ namespace GameLogger
         public class GameEntry
         {
             public int SchemaVersion { get; set; } = 2;
-            public string LoggerVersion { get; set; } = "2.1.0-crewmon";
+            public string LoggerVersion { get; set; } = "2.1.1-crewmon";
             public string Map { get; set; } = "";
             public string Mode { get; set; } = "";
             public string StartedAt { get; set; } = "";
@@ -535,7 +535,9 @@ namespace GameLogger
 }
 '''
 
-files["GameLogger/Patches/SabotagePatches.cs"] = r'''using System;
+files["GameLogger/Patches/SabotagePatches.cs"] = r'''
+using System;
+using System.Reflection;
 using HarmonyLib;
 
 namespace GameLogger
@@ -543,6 +545,9 @@ namespace GameLogger
     [HarmonyPatch]
     public class SabotageLogs
     {
+        private static string lastActionKey = "";
+        private static DateTime lastActionAt = DateTime.MinValue;
+
         private static bool IsRelevantSystem(SystemTypes system)
         {
             return system == SystemTypes.Sabotage
@@ -555,6 +560,38 @@ namespace GameLogger
                 || system == SystemTypes.MushroomMixupSabotage;
         }
 
+        private static void LogSystemAction(
+            SystemTypes systemType,
+            PlayerControl player,
+            byte amount,
+            string source)
+        {
+            if (!IsRelevantSystem(systemType) || player == null || player.Data == null) return;
+
+            var now = DateTime.UtcNow;
+            var key = $"{systemType}|{player.PlayerId}|{amount}";
+
+            // ShipStatus.UpdateSystem normally calls the concrete RepairDamage method.
+            // Keep both hooks as fallbacks for BOR/network differences, but suppress the
+            // immediate duplicate when both see the same action.
+            if (key == lastActionKey && (now - lastActionAt).TotalMilliseconds < 150)
+            {
+                return;
+            }
+
+            lastActionKey = key;
+            lastActionAt = now;
+
+            var name = Utils.FullName(player.Data);
+            Utils.Write($"[SYSTEM] type={systemType} player={name} amount={amount} source={source}");
+            StructuredLog.Add(
+                "system_update",
+                player: name,
+                detail: $"source={source}",
+                system: systemType.ToString(),
+                amount: amount);
+        }
+
         [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.UpdateSystem),
             new Type[] { typeof(SystemTypes), typeof(PlayerControl), typeof(byte) })]
         [HarmonyPrefix]
@@ -563,18 +600,110 @@ namespace GameLogger
             [HarmonyArgument(1)] PlayerControl player,
             [HarmonyArgument(2)] byte amount)
         {
-            if (!IsRelevantSystem(systemType) || player == null || player.Data == null) return;
+            LogSystemAction(systemType, player, amount, "ShipStatus.UpdateSystem");
+        }
 
-            var name = Utils.FullName(player.Data);
+        // The next hooks sit one layer lower than ShipStatus.UpdateSystem. They are
+        // intentionally redundant: on some BOR/client paths the generic ShipStatus
+        // hook does not expose the remote player, while RepairDamage still receives it.
 
-            // Experimental raw trace. This lets us learn exactly how 2024.3.5 + BOR
-            // encode sabotage starts and repairs before converting them into final stats.
-            Utils.Write($"[SYSTEM] type={systemType} player={name} amount={amount}");
-            StructuredLog.Add(
-                "system_update",
-                player: name,
-                system: systemType.ToString(),
-                amount: amount);
+        [HarmonyPatch(typeof(SabotageSystemType), nameof(SabotageSystemType.RepairDamage))]
+        [HarmonyPrefix]
+        public static void SabotageRepairDamage(
+            [HarmonyArgument(0)] PlayerControl player,
+            [HarmonyArgument(1)] byte amount)
+        {
+            LogSystemAction(SystemTypes.Sabotage, player, amount, "SabotageSystemType.RepairDamage");
+        }
+
+        [HarmonyPatch(typeof(ReactorSystemType), nameof(ReactorSystemType.RepairDamage))]
+        [HarmonyPrefix]
+        public static void ReactorRepairDamage(
+            [HarmonyArgument(0)] PlayerControl player,
+            [HarmonyArgument(1)] byte amount)
+        {
+            // ReactorSystemType is also used for Laboratory on Polus.
+            // For Crew'mong Us stats both are the same sabotage family, so Reactor is
+            // a safe fallback when the generic hook did not expose the original type.
+            LogSystemAction(SystemTypes.Reactor, player, amount, "ReactorSystemType.RepairDamage");
+        }
+
+        [HarmonyPatch(typeof(SwitchSystem), nameof(SwitchSystem.RepairDamage))]
+        [HarmonyPrefix]
+        public static void ElectricalRepairDamage(
+            [HarmonyArgument(0)] PlayerControl player,
+            [HarmonyArgument(1)] byte amount)
+        {
+            LogSystemAction(SystemTypes.Electrical, player, amount, "SwitchSystem.RepairDamage");
+        }
+
+        [HarmonyPatch(typeof(LifeSuppSystemType), nameof(LifeSuppSystemType.RepairDamage))]
+        [HarmonyPrefix]
+        public static void OxygenRepairDamage(
+            [HarmonyArgument(0)] PlayerControl player,
+            [HarmonyArgument(1)] byte amount)
+        {
+            LogSystemAction(SystemTypes.LifeSupp, player, amount, "LifeSuppSystemType.RepairDamage");
+        }
+
+        [HarmonyPatch(typeof(HeliSabotageSystem), nameof(HeliSabotageSystem.RepairDamage))]
+        [HarmonyPrefix]
+        public static void HeliRepairDamage(
+            [HarmonyArgument(0)] PlayerControl player,
+            [HarmonyArgument(1)] byte amount)
+        {
+            LogSystemAction(SystemTypes.HeliSabotage, player, amount, "HeliSabotageSystem.RepairDamage");
+        }
+
+        // Comms implementations are internal in some game builds. Dynamic Harmony
+        // targets let the plugin use them when available without a hard compile-time
+        // dependency on their visibility.
+        [HarmonyPatch]
+        public static class HudOverrideRepairDamagePatch
+        {
+            public static bool Prepare()
+            {
+                var type = AccessTools.TypeByName("HudOverrideSystemType");
+                return type != null && AccessTools.Method(type, "RepairDamage") != null;
+            }
+
+            public static MethodBase TargetMethod()
+            {
+                var type = AccessTools.TypeByName("HudOverrideSystemType");
+                return AccessTools.Method(type, "RepairDamage");
+            }
+
+            [HarmonyPrefix]
+            public static void Prefix(
+                [HarmonyArgument(0)] PlayerControl player,
+                [HarmonyArgument(1)] byte amount)
+            {
+                LogSystemAction(SystemTypes.Comms, player, amount, "HudOverrideSystemType.RepairDamage");
+            }
+        }
+
+        [HarmonyPatch]
+        public static class HqHudRepairDamagePatch
+        {
+            public static bool Prepare()
+            {
+                var type = AccessTools.TypeByName("HqHudSystemType");
+                return type != null && AccessTools.Method(type, "RepairDamage") != null;
+            }
+
+            public static MethodBase TargetMethod()
+            {
+                var type = AccessTools.TypeByName("HqHudSystemType");
+                return AccessTools.Method(type, "RepairDamage");
+            }
+
+            [HarmonyPrefix]
+            public static void Prefix(
+                [HarmonyArgument(0)] PlayerControl player,
+                [HarmonyArgument(1)] byte amount)
+            {
+                LogSystemAction(SystemTypes.Comms, player, amount, "HqHudSystemType.RepairDamage");
+            }
         }
 
         [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.AddSystemTask))]
@@ -625,8 +754,16 @@ namespace GameLogger
                 case TaskTypes.FixLights:
                 case TaskTypes.StopCharles:
                 case TaskTypes.MushroomMixupSabotage:
-                    Utils.Write("Sabotage ended / fixed");
-                    StructuredLog.Add("sabotage_end", detail: "Sabotage ended / fixed", system: task.TaskType.ToString());
+                    bool meeting = MeetingHud.Instance != null;
+                    string detail = meeting
+                        ? "Sabotage ended by meeting"
+                        : "Sabotage ended / fixed";
+
+                    Utils.Write(detail);
+                    StructuredLog.Add(
+                        "sabotage_end",
+                        detail: detail,
+                        system: task.TaskType.ToString());
                     break;
             }
         }
