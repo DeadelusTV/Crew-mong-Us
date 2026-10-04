@@ -537,7 +537,7 @@ namespace GameLogger
 
 files["GameLogger/Patches/SabotagePatches.cs"] = r'''
 using System;
-using System.Reflection;
+using Hazel;
 using HarmonyLib;
 
 namespace GameLogger
@@ -571,9 +571,9 @@ namespace GameLogger
             var now = DateTime.UtcNow;
             var key = $"{systemType}|{player.PlayerId}|{amount}";
 
-            // ShipStatus.UpdateSystem normally calls the concrete RepairDamage method.
-            // Keep both hooks as fallbacks for BOR/network differences, but suppress the
-            // immediate duplicate when both see the same action.
+            // Both UpdateSystem overloads can see the same local action. Keep both hooks
+            // because remote RPCs use the MessageReader overload, then suppress only the
+            // immediate duplicate.
             if (key == lastActionKey && (now - lastActionAt).TotalMilliseconds < 150)
             {
                 return;
@@ -592,118 +592,46 @@ namespace GameLogger
                 amount: amount);
         }
 
+        // Local/direct path. This is the overload v2/v2.1 already observed.
         [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.UpdateSystem),
             new Type[] { typeof(SystemTypes), typeof(PlayerControl), typeof(byte) })]
         [HarmonyPrefix]
-        public static void SystemUpdate(
+        public static void SystemUpdateByte(
             [HarmonyArgument(0)] SystemTypes systemType,
             [HarmonyArgument(1)] PlayerControl player,
             [HarmonyArgument(2)] byte amount)
         {
-            LogSystemAction(systemType, player, amount, "ShipStatus.UpdateSystem");
+            LogSystemAction(systemType, player, amount, "ShipStatus.UpdateSystem(byte)");
         }
 
-        // The next hooks sit one layer lower than ShipStatus.UpdateSystem. They are
-        // intentionally redundant: on some BOR/client paths the generic ShipStatus
-        // hook does not expose the remote player, while RepairDamage still receives it.
-
-        [HarmonyPatch(typeof(SabotageSystemType), nameof(SabotageSystemType.RepairDamage))]
+        // Network/remote path. On the host, actions sent by another client arrive through
+        // this overload with the real PlayerControl plus a MessageReader payload.
+        // Peek the amount without consuming the reader so vanilla/BOR can still process it.
+        [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.UpdateSystem),
+            new Type[] { typeof(SystemTypes), typeof(PlayerControl), typeof(MessageReader) })]
         [HarmonyPrefix]
-        public static void SabotageRepairDamage(
-            [HarmonyArgument(0)] PlayerControl player,
-            [HarmonyArgument(1)] byte amount)
+        public static void SystemUpdateReader(
+            [HarmonyArgument(0)] SystemTypes systemType,
+            [HarmonyArgument(1)] PlayerControl player,
+            [HarmonyArgument(2)] MessageReader reader)
         {
-            LogSystemAction(SystemTypes.Sabotage, player, amount, "SabotageSystemType.RepairDamage");
-        }
+            if (reader == null) return;
 
-        [HarmonyPatch(typeof(ReactorSystemType), nameof(ReactorSystemType.RepairDamage))]
-        [HarmonyPrefix]
-        public static void ReactorRepairDamage(
-            [HarmonyArgument(0)] PlayerControl player,
-            [HarmonyArgument(1)] byte amount)
-        {
-            // ReactorSystemType is also used for Laboratory on Polus.
-            // For Crew'mong Us stats both are the same sabotage family, so Reactor is
-            // a safe fallback when the generic hook did not expose the original type.
-            LogSystemAction(SystemTypes.Reactor, player, amount, "ReactorSystemType.RepairDamage");
-        }
+            int position = reader.Position;
+            byte amount;
 
-        [HarmonyPatch(typeof(SwitchSystem), nameof(SwitchSystem.RepairDamage))]
-        [HarmonyPrefix]
-        public static void ElectricalRepairDamage(
-            [HarmonyArgument(0)] PlayerControl player,
-            [HarmonyArgument(1)] byte amount)
-        {
-            LogSystemAction(SystemTypes.Electrical, player, amount, "SwitchSystem.RepairDamage");
-        }
-
-        [HarmonyPatch(typeof(LifeSuppSystemType), nameof(LifeSuppSystemType.RepairDamage))]
-        [HarmonyPrefix]
-        public static void OxygenRepairDamage(
-            [HarmonyArgument(0)] PlayerControl player,
-            [HarmonyArgument(1)] byte amount)
-        {
-            LogSystemAction(SystemTypes.LifeSupp, player, amount, "LifeSuppSystemType.RepairDamage");
-        }
-
-        [HarmonyPatch(typeof(HeliSabotageSystem), nameof(HeliSabotageSystem.RepairDamage))]
-        [HarmonyPrefix]
-        public static void HeliRepairDamage(
-            [HarmonyArgument(0)] PlayerControl player,
-            [HarmonyArgument(1)] byte amount)
-        {
-            LogSystemAction(SystemTypes.HeliSabotage, player, amount, "HeliSabotageSystem.RepairDamage");
-        }
-
-        // Comms implementations are internal in some game builds. Dynamic Harmony
-        // targets let the plugin use them when available without a hard compile-time
-        // dependency on their visibility.
-        [HarmonyPatch]
-        public static class HudOverrideRepairDamagePatch
-        {
-            public static bool Prepare()
+            try
             {
-                var type = AccessTools.TypeByName("HudOverrideSystemType");
-                return type != null && AccessTools.Method(type, "RepairDamage") != null;
+                amount = reader.ReadByte();
+            }
+            catch
+            {
+                reader.Position = position;
+                return;
             }
 
-            public static MethodBase TargetMethod()
-            {
-                var type = AccessTools.TypeByName("HudOverrideSystemType");
-                return AccessTools.Method(type, "RepairDamage");
-            }
-
-            [HarmonyPrefix]
-            public static void Prefix(
-                [HarmonyArgument(0)] PlayerControl player,
-                [HarmonyArgument(1)] byte amount)
-            {
-                LogSystemAction(SystemTypes.Comms, player, amount, "HudOverrideSystemType.RepairDamage");
-            }
-        }
-
-        [HarmonyPatch]
-        public static class HqHudRepairDamagePatch
-        {
-            public static bool Prepare()
-            {
-                var type = AccessTools.TypeByName("HqHudSystemType");
-                return type != null && AccessTools.Method(type, "RepairDamage") != null;
-            }
-
-            public static MethodBase TargetMethod()
-            {
-                var type = AccessTools.TypeByName("HqHudSystemType");
-                return AccessTools.Method(type, "RepairDamage");
-            }
-
-            [HarmonyPrefix]
-            public static void Prefix(
-                [HarmonyArgument(0)] PlayerControl player,
-                [HarmonyArgument(1)] byte amount)
-            {
-                LogSystemAction(SystemTypes.Comms, player, amount, "HqHudSystemType.RepairDamage");
-            }
+            reader.Position = position;
+            LogSystemAction(systemType, player, amount, "ShipStatus.UpdateSystem(reader)");
         }
 
         [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.AddSystemTask))]
