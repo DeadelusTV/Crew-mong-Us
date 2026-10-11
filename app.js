@@ -1815,7 +1815,7 @@ function setMainPlayerAvatar(player){
 }
 function renderPlayerList(){
  const box=document.getElementById("player-list");
- const players=sortedPlayers();
+ const players=activePlayers();
  if(!players.some(p=>p.name===currentPlayer))currentPlayer=players[0]?.name||"";
  box.innerHTML=players.map(p=>{
    const has=RECORDS.some(r=>r.p===p.name),avatar=crewtestCleanAvatarUrl(p.avatar_url);
