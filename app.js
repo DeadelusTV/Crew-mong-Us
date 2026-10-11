@@ -191,9 +191,11 @@ function adminCanWrite(){return authRole==="admin"&&!!authUser}
 function syncEditorNavigation(){
   const entryNav=document.querySelector('.nav[data-view="entry"]');
   const entryView=document.getElementById("view-entry");
+  const importPanel=document.getElementById("json-import-file")?.closest(".subpanel");
   const canEdit=editorCanWrite();
 
   if(entryNav)entryNav.hidden=!canEdit;
+  if(importPanel)importPanel.hidden=!adminCanWrite();
 
   if(!canEdit&&entryView?.classList.contains("active")){
     document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("active",x.dataset.view==="admin"));
