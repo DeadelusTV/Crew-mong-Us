@@ -37,8 +37,8 @@ label{display:grid;gap:6px;color:#bfd0dc;font-size:13px}select,input{width:100%;
 /* Une seule barre, entièrement HTML/CSS. Aucune barre dans l'image. */
 .winbar{
   position:absolute;
-  left:10%;
-  right:10%;
+  left:12%;
+  right:12%;
   top:73.6%;
   height:5.5%;
   display:flex;
