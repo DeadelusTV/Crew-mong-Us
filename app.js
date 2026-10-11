@@ -29,6 +29,7 @@ async function refreshAdminAuth(sessionOverride=null){
   authLoading=true;
   authUser=sessionOverride?.user||null;
   authRole=null;
+  clearProtectedImportLogs();
   renderAdminAccess();
   try{
     let session=sessionOverride;
@@ -42,6 +43,7 @@ async function refreshAdminAuth(sessionOverride=null){
       const {data,error}=await supabaseClient.from("user_roles").select("role").eq("user_id",authUser.id).maybeSingle();
       if(error)throw error;
       authRole=data?.role||null;
+      if(authRole==="admin")await loadLoggerImportsFromSupabase();
     }
   }catch(error){
     console.error("Crew'mong Us : impossible de vérifier le rôle Admin.",error);
@@ -101,7 +103,7 @@ async function handleAdminLogout(){
     if(status)status.textContent="Déconnexion impossible : "+error.message;
     return;
   }
-  authUser=null;authRole=null;renderAdminAccess();renderAccountSetup();syncEditorNavigation();
+  authUser=null;authRole=null;clearProtectedImportLogs();renderAdminAccess();renderAccountSetup();syncEditorNavigation();
 }
 
 function accountSetupNeeded(){
@@ -214,6 +216,7 @@ function requireAdmin(){
 }
 async function reloadPublicData(){
   await loadFromSupabase();
+  if(adminCanWrite())await loadLoggerImportsFromSupabase();
   refreshSessionSelectors();populateGameSelect();syncEntryPlayerOptions();refreshEventPlayerOptions();renderAll();
   if(editorCanWrite())renderAdmin();
 }
@@ -307,7 +310,7 @@ async function loadFromSupabase(){
   const queries=await Promise.all([
     supabaseClient.from("players").select("id,name,handle,aliases,avatar_url,active,source"),
     supabaseClient.from("sessions").select("id,date_label,month,label"),
-    supabaseClient.from("games").select("id,session_id,game_number,map,winner,method,t1_deaths,started_at,fingerprint,fingerprints,logger_version,sources,raw_log"),
+    supabaseClient.from("games").select("id,session_id,game_number,map,winner,method,t1_deaths,started_at,fingerprint,fingerprints,logger_version,sources"),
     supabaseClient.from("session_participants").select("session_id,player_id"),
     supabaseClient.from("records").select("id,game_id,player_id,role,reports,self_reports,sabotage_count,sabotages,repair,kills,death,death_pos,turn,tasks,total_tasks,ejected,note,vote_cast,vote_player,vote_impostor,vote_crew,vote_skip,vote_no_vote,vote_self,crew_vote_total,crew_vote_correct,crew_vote_wrong")
   ]);
@@ -352,7 +355,7 @@ async function loadFromSupabase(){
     fingerprints:Array.isArray(g.fingerprints)?g.fingerprints:[],
     loggerVersion:g.logger_version||"",
     sources:Array.isArray(g.sources)?g.sources:[],
-    raw:g.raw_log||null
+    raw:null
   }));
 
   DEFAULT_SESSION_PARTICIPANTS=Object.fromEntries(
@@ -408,25 +411,44 @@ async function loadFromSupabase(){
 
   TEST_IMPORTS={};
   GAMES.forEach(g=>{
-    if(!g.raw)return;
-    const primary=g.fingerprint||crewtestFingerprint(g.raw);
+    const primary=g.fingerprint||(Array.isArray(g.fingerprints)?g.fingerprints[0]:"")||"";
+    if(!primary&&!g.startedAt)return;
     const info={
       fingerprint:primary,
       fingerprints:Array.from(new Set([primary].concat(g.fingerprints||[]).filter(Boolean))),
       sessionId:g.session,
       gameNumber:g.n,
-      startedAt:g.startedAt||(g.raw&&g.raw.StartedAt)||null,
+      startedAt:g.startedAt||null,
       map:g.map,
-      playerKey:crewtestPlayerKey(g.raw),
-      loggerVersion:g.loggerVersion||(g.raw&&g.raw.LoggerVersion)||"",
+      playerKey:"",
+      loggerVersion:g.loggerVersion||"",
       sources:Array.isArray(g.sources)?g.sources:[],
-      raw:g.raw,
+      raw:null,
       gameId:g.id
     };
     TEST_IMPORTS[primary||g.id]=info;
   });
 
   console.info("Crew'mong Us : données chargées depuis Supabase.");
+}
+
+function clearProtectedImportLogs(){
+  Object.values(TEST_IMPORTS).filter(Boolean).forEach(info=>{info.raw=null;info.playerKey=""});
+}
+async function loadLoggerImportsFromSupabase(){
+  if(!adminCanWrite()){clearProtectedImportLogs();return}
+  const {data,error}=await supabaseClient.from("logger_imports").select("game_id,raw_log");
+  if(error)throw error;
+  const byGame=new Map((data||[]).map(row=>[row.game_id,row.raw_log]));
+  Object.values(TEST_IMPORTS).filter(Boolean).forEach(info=>{
+    const raw=byGame.get(info.gameId)||null;
+    info.raw=raw;
+    if(raw){
+      info.playerKey=crewtestPlayerKey(raw);
+      info.startedAt=info.startedAt||raw.StartedAt||null;
+      info.loggerVersion=info.loggerVersion||raw.LoggerVersion||"";
+    }
+  });
 }
 /* ===== Helpers de sessions et joueurs ===== */
 function sessionIds(){return Object.keys(SESSIONS).sort((a,b)=>b.localeCompare(a))}
