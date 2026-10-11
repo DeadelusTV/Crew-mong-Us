@@ -417,3 +417,7 @@ $$;
 
 revoke all on function public.admin_import_logger_game(uuid,text,text,text,text,bigint,text,text,text,bigint,timestamptz,text,text[],text,text[],jsonb,jsonb) from public, anon;
 grant execute on function public.admin_import_logger_game(uuid,text,text,text,text,bigint,text,text,text,bigint,timestamptz,text,text[],text,text[],jsonb,jsonb) to authenticated;
+
+
+-- The RLS event-trigger helper is internal only; keep it out of the Data API.
+revoke all on function public.rls_auto_enable() from public, anon, authenticated;
