@@ -1778,6 +1778,7 @@ function renderSession(id){
     pkills=rr.reduce((a,r)=>a+(r.kills?.length||0),0),
     preports=rr.reduce((a,r)=>a+Number(r.reports||0),0),
     pself=rr.reduce((a,r)=>a+Number(r.self||0),0),
+    psabotages=rr.reduce((a,r)=>a+Number(r.sab||0),0),
     prepairs=rr.reduce((a,r)=>a+Number(r.repair||0),0),
     psurvive=crew.filter(r=>!r.ejected&&(!r.death||r.death==="Survit")).length,
     pVoteTotal=rr.reduce((a,r)=>a+Number(r.crewVoteTotal||0),0),
@@ -1794,6 +1795,7 @@ function renderSession(id){
       <td>${pkills}</td>
       <td>${preports}</td>
       <td>${pself}</td>
+      <td>${psabotages}</td>
       <td>${prepairs}</td>
       <td>${pct(psurvive,crew.length)}</td>
       <td>${pct(pVoteCorrect,pVoteTotal)}</td>
